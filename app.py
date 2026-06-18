@@ -58,6 +58,12 @@ st.markdown("""
         margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
+        color: #ffffff !important;
+    }
+
+    /* Force ALL text to be bright white */
+    .stMarkdown, p, li, h1, h2, h3, h4, h5, h6, span, label {
+        color: #ffffff !important;
     }
 
     /* THE UNIFIED GEMINI PILL HACK */
