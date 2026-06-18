@@ -115,6 +115,20 @@ if "current_model" not in st.session_state:
     st.session_state.current_model = None
 if "api_key" not in st.session_state:
     st.session_state.api_key = ""
+if "trigger_submit" not in st.session_state:
+    st.session_state.trigger_submit = False
+if "submitted_text" not in st.session_state:
+    st.session_state.submitted_text = ""
+if "last_audio" not in st.session_state:
+    st.session_state.last_audio = None
+if "last_camera" not in st.session_state:
+    st.session_state.last_camera = None
+
+def handle_text_submit():
+    if st.session_state.get("prompt_input"):
+        st.session_state.trigger_submit = True
+        st.session_state.submitted_text = st.session_state.prompt_input
+        st.session_state.prompt_input = ""
 
 def init_agent(api_key, model_name):
     client = genai.Client(api_key=api_key)
@@ -160,7 +174,7 @@ with col1:
         camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
         
 with col2:
-    prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed")
+    prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed", key="prompt_input", on_change=handle_text_submit)
     
 with col3:
     selected_model = st.selectbox(
@@ -184,24 +198,37 @@ if st.session_state.api_key and (st.session_state.chat_session is None or st.ses
     except Exception as e:
         st.error(f"Error initializing agent: {e}")
 
-# Execute when there's a prompt OR audio recording
-if prompt or audio or camera_photo or (uploaded_files and st.button("Submit Attached Files")):
+# Check for new media that hasn't been processed yet
+is_new_audio = audio is not None and audio != st.session_state.last_audio
+is_new_camera = camera_photo is not None and camera_photo != st.session_state.last_camera
+is_files_submit = uploaded_files and st.button("Submit Attached Files")
+
+# Execute when there's a prompt OR new audio/camera/files
+if st.session_state.trigger_submit or is_new_audio or is_new_camera or is_files_submit:
     if not st.session_state.api_key:
         st.error("Please open the Settings sidebar on the left and enter your API Key first.")
+        st.session_state.trigger_submit = False
     else:
         # Determine the user text
-        user_text = prompt if prompt else "Please analyze the attached media."
-        if audio and not prompt:
+        user_text = "Please analyze the attached media."
+        if st.session_state.trigger_submit:
+            user_text = st.session_state.submitted_text
+        elif is_new_audio:
             user_text = "I recorded an audio message. Please listen to it."
-        if camera_photo and not prompt:
+        elif is_new_camera:
             user_text = "I took a photo. Please analyze it."
             
+        # Update last known states to prevent infinite loops
+        if is_new_audio: st.session_state.last_audio = audio
+        if is_new_camera: st.session_state.last_camera = camera_photo
+            
         # Save the media to session state so it survives the rerun!
-        st.session_state.pending_audio = audio
-        st.session_state.pending_camera = camera_photo
-        st.session_state.pending_files = uploaded_files
+        st.session_state.pending_audio = audio if is_new_audio else None
+        st.session_state.pending_camera = camera_photo if is_new_camera else None
+        st.session_state.pending_files = uploaded_files if is_files_submit else None
             
         st.session_state.messages.append({"role": "user", "content": user_text})
+        st.session_state.trigger_submit = False # Reset the submit flag
         st.rerun()
 
 # --- TRIGGER EXECUTION ---
