@@ -1,7 +1,8 @@
 import os
 import tempfile
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import math
 import json
 
@@ -85,6 +86,7 @@ system_prompt, diagnostic_rules = load_knowledge()
 
 # Tools definitions
 def calculate_bearing_frequencies(n_balls: int, ball_diameter_mm: float, pitch_diameter_mm: float, contact_angle_deg: float, shaft_rpm: float) -> dict:
+    '''Calculate bearing defect frequencies (BPFO, BPFI, BSF, FTF).'''
     theta = math.radians(contact_angle_deg)
     d_over_D = ball_diameter_mm / pitch_diameter_mm
     rpm_hz = shaft_rpm / 60.0
@@ -95,6 +97,7 @@ def calculate_bearing_frequencies(n_balls: int, ball_diameter_mm: float, pitch_d
     return {"BPFO_hz": round(bpfo, 2), "BPFI_hz": round(bpfi, 2), "BSF_hz": round(bsf, 2), "FTF_hz": round(ftf, 2)}
 
 def classify_iso_severity(velocity_rms_mm_s: float, machine_group: int = 3) -> dict:
+    '''Classify ISO severity zone (A, B, C, D) based on vibration velocity.'''
     boundaries = {1: [2.3, 4.5, 7.1], 2: [1.4, 2.8, 4.5], 3: [2.3, 4.5, 7.1], 4: [0.71, 1.8, 4.5]}
     b = boundaries.get(machine_group, boundaries[3])
     v = velocity_rms_mm_s
@@ -105,6 +108,7 @@ def classify_iso_severity(velocity_rms_mm_s: float, machine_group: int = 3) -> d
     return {"zone": zone, "velocity_rms_mm_s": velocity_rms_mm_s}
 
 def calculate_gear_mesh_frequency(n_teeth: int, shaft_rpm: float) -> dict:
+    '''Calculate Gear Mesh Frequency (GMF) and 2X GMF.'''
     gmf = n_teeth * (shaft_rpm / 60.0)
     return {"GMF_hz": round(gmf, 2), "2X_GMF_hz": round(2 * gmf, 2)}
 
@@ -113,70 +117,28 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat_session" not in st.session_state:
     st.session_state.chat_session = None
+if "genai_client" not in st.session_state:
+    st.session_state.genai_client = None
 
 def init_agent(api_key):
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     full_prompt = f"{system_prompt}\n\n---\n\n# DIAGNOSTIC RULES KNOWLEDGE BASE\n{diagnostic_rules}"
     
-    tools = [
-        genai.protos.Tool(
-            function_declarations=[
-                genai.protos.FunctionDeclaration(
-                    name="calculate_bearing_frequencies",
-                    description="Calculate bearing defect frequencies.",
-                    parameters=genai.protos.Schema(
-                        type=genai.protos.Type.OBJECT,
-                        properties={
-                            "n_balls": genai.protos.Schema(type=genai.protos.Type.INTEGER),
-                            "ball_diameter_mm": genai.protos.Schema(type=genai.protos.Type.NUMBER),
-                            "pitch_diameter_mm": genai.protos.Schema(type=genai.protos.Type.NUMBER),
-                            "contact_angle_deg": genai.protos.Schema(type=genai.protos.Type.NUMBER),
-                            "shaft_rpm": genai.protos.Schema(type=genai.protos.Type.NUMBER),
-                        },
-                        required=["n_balls", "ball_diameter_mm", "pitch_diameter_mm", "contact_angle_deg", "shaft_rpm"]
-                    )
-                ),
-                genai.protos.FunctionDeclaration(
-                    name="classify_iso_severity",
-                    description="Classify ISO severity.",
-                    parameters=genai.protos.Schema(
-                        type=genai.protos.Type.OBJECT,
-                        properties={
-                            "velocity_rms_mm_s": genai.protos.Schema(type=genai.protos.Type.NUMBER),
-                            "machine_group": genai.protos.Schema(type=genai.protos.Type.INTEGER),
-                        },
-                        required=["velocity_rms_mm_s"]
-                    )
-                ),
-                genai.protos.FunctionDeclaration(
-                    name="calculate_gear_mesh_frequency",
-                    description="Calculate GMF.",
-                    parameters=genai.protos.Schema(
-                        type=genai.protos.Type.OBJECT,
-                        properties={
-                            "n_teeth": genai.protos.Schema(type=genai.protos.Type.INTEGER),
-                            "shaft_rpm": genai.protos.Schema(type=genai.protos.Type.NUMBER),
-                        },
-                        required=["n_teeth", "shaft_rpm"]
-                    )
-                )
-            ]
+    # Create the chat session
+    chat = client.chats.create(
+        model="gemini-2.0-flash",
+        config=types.GenerateContentConfig(
+            system_instruction=full_prompt,
+            tools=[calculate_bearing_frequencies, classify_iso_severity, calculate_gear_mesh_frequency],
         )
-    ]
-    model = genai.GenerativeModel(model_name="gemini-2.0-flash", system_instruction=full_prompt, tools=tools)
-    return model.start_chat(enable_automatic_function_calling=False)
-
-def handle_function_call(fc):
-    name = fc.name
-    args = dict(fc.args)
-    if name == "calculate_bearing_frequencies": return calculate_bearing_frequencies(**args)
-    elif name == "classify_iso_severity": return classify_iso_severity(**args)
-    elif name == "calculate_gear_mesh_frequency": return calculate_gear_mesh_frequency(**args)
-    return {"error": "Unknown function"}
+    )
+    return client, chat
 
 if api_key and st.session_state.chat_session is None:
     try:
-        st.session_state.chat_session = init_agent(api_key)
+        client, chat = init_agent(api_key)
+        st.session_state.genai_client = client
+        st.session_state.chat_session = chat
     except Exception as e:
         st.sidebar.error(f"Error initializing agent: {e}")
 
@@ -211,7 +173,7 @@ if prompt:
             message_placeholder = st.empty()
             with st.spinner("Analyzing..."):
                 try:
-                    # Handle file uploads to Gemini
+                    # Handle file uploads to Gemini using new SDK
                     gemini_parts = [prompt]
                     if uploaded_files:
                         for f in uploaded_files:
@@ -222,36 +184,16 @@ if prompt:
                                 tmp_path = tmp.name
                             
                             # Upload to Gemini
-                            gem_file = genai.upload_file(tmp_path)
+                            gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
                             gemini_parts.append(gem_file)
                             
                             # Clean up
                             os.remove(tmp_path)
                     
-                    # Send message
+                    # Send message (tools are handled automatically by the SDK!)
                     response = st.session_state.chat_session.send_message(gemini_parts)
-                    
-                    # Handle tools
-                    while response.candidates and response.candidates[0].content.parts:
-                        has_fc = False
-                        for part in response.candidates[0].content.parts:
-                            if hasattr(part, "function_call") and part.function_call.name:
-                                has_fc = True
-                                fc = part.function_call
-                                result = handle_function_call(fc)
-                                response = st.session_state.chat_session.send_message(
-                                    genai.protos.Content(parts=[
-                                        genai.protos.Part(function_response=genai.protos.FunctionResponse(
-                                            name=fc.name, response={"result": result}
-                                        ))
-                                    ])
-                                )
-                                break
-                        if not has_fc: break
-                    
-                    if response.candidates and response.candidates[0].content.parts:
-                        final_text = response.candidates[0].content.parts[0].text
-                        message_placeholder.markdown(final_text)
-                        st.session_state.messages.append({"role": "assistant", "content": final_text})
+                    final_text = response.text
+                    message_placeholder.markdown(final_text)
+                    st.session_state.messages.append({"role": "assistant", "content": final_text})
                 except Exception as e:
                     st.error(f"Error connecting to AI: {e}. Please check your API key or file format.")
