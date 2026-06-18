@@ -8,90 +8,51 @@ import json
 from streamlit_mic_recorder import mic_recorder
 
 # Set up page config
-st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="wide")
+st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centered", initial_sidebar_state="collapsed")
 
-# Custom CSS for Gemini Dark Mode look
+# Minimal CSS to hide footer and header and fix text visibility
 st.markdown("""
 <style>
-    /* Main background */
-    .stApp {
-        background-color: #131314;
-        color: #e3e3e3;
-        font-family: 'Google Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stApp > header {visibility: hidden;}
     
-    /* Center aligning main title */
-    .main-title {
+    /* Make the title centered and large */
+    .gemini-title {
         text-align: center;
         font-size: 2.5rem;
         font-weight: 500;
-        margin-top: 5vh;
+        margin-top: 15vh;
         margin-bottom: 2rem;
-        color: #e3e3e3;
         letter-spacing: -0.5px;
+        color: #ffffff !important;
     }
     
-    /* Chat bubbles */
+    /* Force ALL text to be bright white and readable */
+    .stMarkdown, p, li, h1, h2, h3, h4, h5, h6, span {
+        color: #ffffff !important;
+    }
+    
+    /* Create a visible 'canvas' card for the AI results */
     .stChatMessage {
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 10px;
-        background-color: transparent;
-    }
-    .stChatMessage[data-testid="stChatMessageUser"] {
-        background-color: #1e1f20;
-    }
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: #1e1f20;
-        border-right: none;
+        background-color: #1e1f20 !important;
+        border: 1px solid #444746 !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        margin-bottom: 15px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
     }
     
-    /* Selectbox styling */
-    div[data-baseweb="select"] > div {
-        background-color: #1e1f20;
-        color: white;
-        border: 1px solid #444746;
-        border-radius: 12px;
+    /* Center container */
+    .controls-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
     }
-    
-    /* Input areas */
-    .stChatInput {
-        background-color: #1e1f20;
-        border-radius: 24px;
-        border: 1px solid #444746;
-    }
-    
-    /* Hide some Streamlit default branding for minimal look */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
-
-# Sidebar for settings
-with st.sidebar:
-    st.markdown("### ⚙️ Settings")
-    api_key = st.text_input("Enter your Gemini API Key", type="password")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 🧠 Model Selection")
-    # Exact 2026 Models Dropdown
-    selected_model = st.selectbox(
-        "Choose AI Brain:",
-        (
-            "gemini-3.5-flash",
-            "gemini-3-flash",
-            "gemini-2.5-flash",
-            "gemini-1.5-flash-latest",
-        ),
-        index=3  # Default to 1.5-flash as fallback
-    )
-    
-    with st.expander("📚 Help & Instructions"):
-        st.markdown("1. Enter your API key.")
-        st.markdown("2. Select your preferred model.")
-        st.markdown("3. Type, upload, record audio, or use the camera.")
 
 # Load system prompt and rules
 @st.cache_data
@@ -142,6 +103,8 @@ if "chat_session" not in st.session_state:
     st.session_state.chat_session = None
 if "current_model" not in st.session_state:
     st.session_state.current_model = None
+if "api_key" not in st.session_state:
+    st.session_state.api_key = ""
 
 def init_agent(api_key, model_name):
     client = genai.Client(api_key=api_key)
@@ -157,47 +120,65 @@ def init_agent(api_key, model_name):
     )
     return client, chat
 
-# Re-init if the user changes the model or logs in
-if api_key and (st.session_state.chat_session is None or st.session_state.current_model != selected_model):
-    try:
-        client, chat = init_agent(api_key, selected_model)
-        st.session_state.genai_client = client
-        st.session_state.chat_session = chat
-        st.session_state.current_model = selected_model
-    except Exception as e:
-        st.sidebar.error(f"Error initializing agent: {e}")
-
-# Main Layout
+# Only show the initial greeting if there are no messages
 if not st.session_state.messages:
-    # Show Gemini-like central greeting if empty
-    st.markdown('<div class="main-title">What can I help with, Engineer?</div>', unsafe_allow_html=True)
+    st.markdown('<div class="gemini-title">What can I help with, Engineer?</div>', unsafe_allow_html=True)
 else:
     # Display chat history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-# Input Controls Layout
-st.markdown("<br>", unsafe_allow_html=True)
-col_upload, col_mic, col_cam = st.columns([1, 1, 1])
+# --- CENTERED CONTROLS ABOVE CHAT INPUT ---
+col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 3, 1])
 
-with col_upload:
-    uploaded_files = st.file_uploader("📎 Attach Data", accept_multiple_files=True)
+with col2:
+    # The "+" button using st.popover to hide messy inputs
+    with st.popover("➕"):
+        st.markdown("**Attach Media**")
+        uploaded_files = st.file_uploader("Files", accept_multiple_files=True, label_visibility="collapsed")
+        st.markdown("**Camera**")
+        camera_photo = st.camera_input("Camera", label_visibility="collapsed")
 
-with col_mic:
-    # Streamlit Mic Recorder
-    audio = mic_recorder(start_prompt="🎙️ Record Audio", stop_prompt="🛑 Stop Recording", key="mic")
+with col3:
+    selected_model = st.selectbox(
+        "Model",
+        (
+            "gemini-3.5-flash",
+            "gemini-3-flash",
+            "gemini-2.5-flash",
+            "gemini-1.5-flash-latest",
+        ),
+        index=3,
+        label_visibility="collapsed"
+    )
 
-with col_cam:
-    # Streamlit Native Camera Input
-    camera_photo = st.camera_input("📷 Take Photo")
+with col4:
+    # Key input
+    api_key = st.text_input("API Key", type="password", placeholder="Enter API Key...", label_visibility="collapsed")
+    if api_key:
+        st.session_state.api_key = api_key
 
-prompt = st.chat_input("Ask MechDiag to analyze...")
+with col5:
+    audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
+
+# --- RE-INIT AGENT IF SETTINGS CHANGE ---
+if st.session_state.api_key and (st.session_state.chat_session is None or st.session_state.current_model != selected_model):
+    try:
+        client, chat = init_agent(st.session_state.api_key, selected_model)
+        st.session_state.genai_client = client
+        st.session_state.chat_session = chat
+        st.session_state.current_model = selected_model
+    except Exception as e:
+        st.error(f"Error initializing agent: {e}")
+
+# --- CHAT INPUT ---
+prompt = st.chat_input("Ask MechDiag...")
 
 # Execute when there's a prompt OR audio recording
 if prompt or audio or camera_photo:
-    if not api_key:
-        st.error("Please enter an API Key in the sidebar first.")
+    if not st.session_state.api_key:
+        st.error("Please enter an API Key in the field above first.")
     else:
         # Determine the user text
         user_text = prompt if prompt else "Please analyze the attached media."
@@ -232,7 +213,6 @@ if prompt or audio or camera_photo:
                             
                     # 2. Handle Audio Recording
                     if audio:
-                        # audio dictionary contains bytes
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
                             tmp.write(audio['bytes'])
                             tmp_path = tmp.name
@@ -254,5 +234,6 @@ if prompt or audio or camera_photo:
                     final_text = response.text
                     message_placeholder.markdown(final_text)
                     st.session_state.messages.append({"role": "assistant", "content": final_text})
+                    st.rerun()
                 except Exception as e:
-                    st.error(f"Error connecting to AI: {e}. Please check your API key, free-tier limits, or file format.")
+                    st.error(f"Error connecting to AI: {e}")
