@@ -5,10 +5,46 @@ from google import genai
 from google.genai import types
 import math
 import json
+import base64
 from streamlit_mic_recorder import mic_recorder
 
 # Set up page config
 st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centered", initial_sidebar_state="collapsed")
+
+# --- BACKGROUND IMAGE WATERMARK ---
+@st.cache_data
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_background(png_file):
+    try:
+        bin_str = get_base64_of_bin_file(png_file)
+        page_bg_img = f'''
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{bin_str}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+        }}
+        /* Fade the image heavily into the dark background */
+        .stApp::before {{
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(19, 19, 20, 0.93);
+            z-index: -1;
+        }}
+        </style>
+        '''
+        st.markdown(page_bg_img, unsafe_allow_html=True)
+    except Exception:
+        pass
+
+set_background('bg_pattern.png')
 
 # Custom CSS for the Unified Chat Pill
 st.markdown("""
