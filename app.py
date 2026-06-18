@@ -23,17 +23,20 @@ def set_background(png_file):
         bin_str = get_base64_of_bin_file(png_file)
         page_bg_img = f'''
         <style>
-        /* Apply background with low opacity to work perfectly in both Light and Dark modes */
-        .stApp::before {{
-            content: "";
+        /* Add the image directly to the app background */
+        .stApp {{
             background-image: url("data:image/png;base64,{bin_str}");
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
+        }}
+        /* Add a very dark overlay so the image becomes a subtle watermark, forcing dark mode aesthetic */
+        .stApp::before {{
+            content: "";
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            opacity: 0.08;
+            background-color: rgba(19, 19, 20, 0.93);
             z-index: -1;
         }}
         </style>
