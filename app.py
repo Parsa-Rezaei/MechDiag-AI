@@ -9,7 +9,7 @@ import base64
 from streamlit_mic_recorder import mic_recorder
 
 # Set up page config
-st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centered", initial_sidebar_state="expanded")
 
 # --- BACKGROUND IMAGE WATERMARK ---
 @st.cache_data
@@ -44,7 +44,7 @@ def set_background(png_file):
 
 set_background('bg_pattern.png')
 
-# Custom CSS for Native Light/Dark Mode Support
+# Custom CSS to force the exact Gemini Dark Pill design
 st.markdown("""
 <style>
     /* Make the title centered and large */
@@ -55,6 +55,55 @@ st.markdown("""
         margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
+    }
+
+    /* THE UNIFIED GEMINI PILL HACK */
+    /* Target the exact row directly below the anchor */
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] {
+        background-color: #1e1f20 !important;
+        border-radius: 50px !important;
+        padding: 8px 20px !important;
+        align-items: center !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+        border: 1px solid #444746 !important;
+        margin-top: 30px !important;
+        margin-bottom: 50px !important;
+    }
+
+    /* Strip background and borders from components inside the pill, and force text color to white */
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="input"] > div {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] input {
+        color: #ffffff !important;
+    }
+    
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="select"] > div {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #ffffff !important;
+    }
+    
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="select"] span {
+        color: #ffffff !important;
+    }
+    
+    /* Style buttons inside the pill */
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #e3e3e3 !important;
+        padding: 5px !important;
+    }
+
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button:hover {
+        background-color: rgba(255,255,255,0.1) !important;
+        border-radius: 50% !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -133,38 +182,40 @@ else:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-# --- THE NATIVE UNIFIED CHAT BOX ---
-# Wrapping the controls in a native Streamlit border container
-with st.container(border=True):
-    col1, col2, col3, col4, col5 = st.columns([1, 7, 3, 1, 1], gap="small")
+# --- SIDEBAR FOR API KEY ---
+with st.sidebar:
+    st.markdown("### ⚙️ Settings")
+    api_key_input = st.text_input("Gemini API Key", type="password", placeholder="Paste API Key here...")
+    if api_key_input:
+        st.session_state.api_key = api_key_input
+    st.markdown("---")
+    st.markdown("*Your key is secure and only used for this session.*")
+
+# --- THE UNIFIED CHAT PILL ---
+# This invisible anchor lets our CSS target the row directly below it
+st.markdown('<div id="chat-bar-anchor"></div>', unsafe_allow_html=True)
+col1, col2, col3, col5 = st.columns([1, 8, 3, 1], gap="small")
+
+with col1:
+    with st.popover("➕"):
+        st.markdown("**Attach Media**")
+        uploaded_files = st.file_uploader("Upload Files", accept_multiple_files=True, label_visibility="collapsed")
+        st.markdown("**Camera**")
+        camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
+        
+with col2:
+    prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed")
     
-    with col1:
-        with st.popover("➕"):
-            st.markdown("**Attach Media**")
-            uploaded_files = st.file_uploader("Upload Files", accept_multiple_files=True, label_visibility="collapsed")
-            st.markdown("**Camera**")
-            camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
+with col3:
+    selected_model = st.selectbox(
+        "Model",
+        ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest"),
+        index=3,
+        label_visibility="collapsed"
+    )
             
-    with col2:
-        prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed")
-        
-    with col3:
-        selected_model = st.selectbox(
-            "Model",
-            ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest"),
-            index=3,
-            label_visibility="collapsed"
-        )
-        
-    with col4:
-        with st.popover("⋯"):
-            st.markdown("**Settings**")
-            api_key_input = st.text_input("API Key", type="password", placeholder="Paste API Key here...")
-            if api_key_input:
-                st.session_state.api_key = api_key_input
-                
-    with col5:
-        audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
+with col5:
+    audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
 
 
 # --- RE-INIT AGENT IF SETTINGS CHANGE ---
