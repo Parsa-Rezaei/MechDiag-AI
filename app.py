@@ -23,19 +23,17 @@ def set_background(png_file):
         bin_str = get_base64_of_bin_file(png_file)
         page_bg_img = f'''
         <style>
-        .stApp {{
+        /* Apply background with low opacity to work perfectly in both Light and Dark modes */
+        .stApp::before {{
+            content: "";
             background-image: url("data:image/png;base64,{bin_str}");
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
-        }}
-        /* Fade the image heavily into the dark background */
-        .stApp::before {{
-            content: "";
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(19, 19, 20, 0.93);
+            opacity: 0.08;
             z-index: -1;
         }}
         </style>
@@ -46,13 +44,9 @@ def set_background(png_file):
 
 set_background('bg_pattern.png')
 
-# Custom CSS for the Unified Chat Pill
+# Custom CSS for Native Light/Dark Mode Support
 st.markdown("""
 <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stApp > header {visibility: hidden;}
-    
     /* Make the title centered and large */
     .gemini-title {
         text-align: center;
@@ -61,62 +55,6 @@ st.markdown("""
         margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
-        color: #ffffff !important;
-    }
-    
-    /* Force ALL text to be bright white */
-    .stMarkdown, p, li, h1, h2, h3, h4, h5, h6, span {
-        color: #ffffff !important;
-    }
-    
-    /* Chat bubbles canvas */
-    .stChatMessage {
-        background-color: #1e1f20 !important;
-        border: 1px solid #444746 !important;
-        border-radius: 12px !important;
-        padding: 20px !important;
-        margin-bottom: 15px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
-    }
-
-    /* THE UNIFIED GEMINI PILL HACK */
-    /* Target the exact row directly below the anchor */
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] {
-        background-color: #1e1f20 !important;
-        border-radius: 50px !important;
-        padding: 8px 20px !important;
-        align-items: center !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
-        border: 1px solid #444746 !important;
-        margin-top: 30px !important;
-        margin-bottom: 50px !important;
-    }
-
-    /* Strip background and borders from components inside the pill */
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="input"] > div {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="select"] > div {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* Style buttons inside the pill */
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: #e3e3e3 !important;
-        padding: 5px !important;
-    }
-
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button:hover {
-        background-color: rgba(255,255,255,0.1) !important;
-        border-radius: 50% !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -195,38 +133,38 @@ else:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-# --- THE UNIFIED CHAT PILL ---
-# This invisible anchor lets our CSS target the row directly below it
-st.markdown('<div id="chat-bar-anchor"></div>', unsafe_allow_html=True)
-col1, col2, col3, col4, col5 = st.columns([1, 7, 3, 1, 1], gap="small")
-
-with col1:
-    with st.popover("➕"):
-        st.markdown("**Attach Media**")
-        uploaded_files = st.file_uploader("Upload Files", accept_multiple_files=True, label_visibility="collapsed")
-        st.markdown("**Camera**")
-        camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
-
-with col2:
-    prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed")
-
-with col3:
-    selected_model = st.selectbox(
-        "Model",
-        ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest"),
-        index=3,
-        label_visibility="collapsed"
-    )
-
-with col4:
-    with st.popover("⋯"):
-        st.markdown("**Settings**")
-        api_key_input = st.text_input("API Key", type="password", placeholder="Paste API Key here...")
-        if api_key_input:
-            st.session_state.api_key = api_key_input
+# --- THE NATIVE UNIFIED CHAT BOX ---
+# Wrapping the controls in a native Streamlit border container
+with st.container(border=True):
+    col1, col2, col3, col4, col5 = st.columns([1, 7, 3, 1, 1], gap="small")
+    
+    with col1:
+        with st.popover("➕"):
+            st.markdown("**Attach Media**")
+            uploaded_files = st.file_uploader("Upload Files", accept_multiple_files=True, label_visibility="collapsed")
+            st.markdown("**Camera**")
+            camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
             
-with col5:
-    audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
+    with col2:
+        prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed")
+        
+    with col3:
+        selected_model = st.selectbox(
+            "Model",
+            ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest"),
+            index=3,
+            label_visibility="collapsed"
+        )
+        
+    with col4:
+        with st.popover("⋯"):
+            st.markdown("**Settings**")
+            api_key_input = st.text_input("API Key", type="password", placeholder="Paste API Key here...")
+            if api_key_input:
+                st.session_state.api_key = api_key_input
+                
+    with col5:
+        audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
 
 
 # --- RE-INIT AGENT IF SETTINGS CHANGE ---
