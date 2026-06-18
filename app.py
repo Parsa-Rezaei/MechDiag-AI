@@ -126,7 +126,7 @@ def init_agent(api_key):
     
     # Create the chat session
     chat = client.chats.create(
-        model="gemini-2.0-flash",
+        model="gemini-1.5-flash",
         config=types.GenerateContentConfig(
             system_instruction=full_prompt,
             tools=[calculate_bearing_frequencies, classify_iso_severity, calculate_gear_mesh_frequency],
