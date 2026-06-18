@@ -1,4 +1,5 @@
 import os
+import tempfile
 import streamlit as st
 import google.generativeai as genai
 import math
@@ -7,25 +8,66 @@ import json
 # Set up page config
 st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="wide")
 
-st.title("⚙️ MechDiag AI")
-st.subheader("Machinery Condition Monitoring Diagnostic Agent")
+# Custom CSS for modern minimal design
+st.markdown("""
+<style>
+    /* Main background and text */
+    .stApp {
+        background-color: #f8f9fa;
+        color: #212529;
+    }
+    
+    /* Header minimalist */
+    .css-10trblm {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    /* Chat bubbles */
+    .stChatMessage {
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        background-color: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e9ecef;
+    }
+    
+    /* Inputs */
+    .stTextInput>div>div>input, .stFileUploader>div>div>div>button {
+        border-radius: 8px;
+    }
+    
+    /* Hide some Streamlit default branding for minimal look */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
-# Sidebar for API Key and instructions
+st.title("⚙️ MechDiag AI")
+st.markdown("<p style='color: #6c757d; font-size: 1.1rem; font-weight: 500;'>Modern Machinery Condition Monitoring Agent</p>", unsafe_allow_html=True)
+
+# Sidebar
 with st.sidebar:
     st.markdown("### 🔑 Setup")
     api_key = st.text_input("Enter your Gemini API Key", type="password")
+    
     if not api_key:
-        st.warning("Please enter an API key to continue. You can get one for free from Google AI Studio.")
+        st.info("💡 **Welcome!** Please enter an API key above to start diagnosing.")
     
-    st.markdown("---")
-    st.markdown("### 📋 How to use")
-    st.markdown("1. Enter your API key above.")
-    st.markdown("2. Describe your machine's vibration data, symptoms, or upload FFT spectra.")
-    st.markdown("3. The AI will guide you to the root cause using ISO standards and fault logic trees.")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    st.markdown("---")
-    st.markdown("**Example Input:**")
-    st.info("I have a centrifugal pump running at 2955 RPM. The overall vibration on the motor drive end horizontal is 7.8 mm/s RMS. The FFT shows a dominant peak at 49.25 Hz (1X RPM) at 7.2 mm/s. Phase horizontal is 45°, vertical is 138°.")
+    with st.expander("📚 Help & Instructions"):
+        st.markdown("1. Enter your API key.")
+        st.markdown("2. Upload your machine data (PDFs, signals, images).")
+        st.markdown("3. Ask the AI to diagnose the fault.")
+        st.markdown("---")
+        st.markdown("**Example:** 'Diagnose this pump based on the attached FFT report.'")
 
 # Load system prompt and rules
 @st.cache_data
@@ -50,10 +92,7 @@ def calculate_bearing_frequencies(n_balls: int, ball_diameter_mm: float, pitch_d
     bpfi = (n_balls / 2) * rpm_hz * (1 + d_over_D * math.cos(theta))
     bsf = (pitch_diameter_mm / (2 * ball_diameter_mm)) * rpm_hz * (1 - (d_over_D * math.cos(theta)) ** 2)
     ftf = (rpm_hz / 2) * (1 - d_over_D * math.cos(theta))
-    return {
-        "BPFO_hz": round(bpfo, 2), "BPFI_hz": round(bpfi, 2),
-        "BSF_hz": round(bsf, 2), "FTF_hz": round(ftf, 2)
-    }
+    return {"BPFO_hz": round(bpfo, 2), "BPFI_hz": round(bpfi, 2), "BSF_hz": round(bsf, 2), "FTF_hz": round(ftf, 2)}
 
 def classify_iso_severity(velocity_rms_mm_s: float, machine_group: int = 3) -> dict:
     boundaries = {1: [2.3, 4.5, 7.1], 2: [1.4, 2.8, 4.5], 3: [2.3, 4.5, 7.1], 4: [0.71, 1.8, 4.5]}
@@ -146,20 +185,51 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Chat input
-if prompt := st.chat_input("Describe the vibration data here..."):
+# File Uploader & Chat Input Area
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("---")
+col1, col2 = st.columns([1, 3])
+
+with col1:
+    uploaded_files = st.file_uploader("📎 Attach Files (PDF, Data, Images)", accept_multiple_files=True)
+
+with col2:
+    prompt = st.chat_input("Ask MechDiag to analyze...")
+
+if prompt:
     if not api_key:
         st.error("Please enter an API Key in the sidebar first.")
     else:
+        # Display user message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
+            if uploaded_files:
+                st.caption(f"📎 Attached {len(uploaded_files)} file(s)")
 
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             with st.spinner("Analyzing..."):
                 try:
-                    response = st.session_state.chat_session.send_message(prompt)
+                    # Handle file uploads to Gemini
+                    gemini_parts = [prompt]
+                    if uploaded_files:
+                        for f in uploaded_files:
+                            # Save to temp file
+                            suffix = os.path.splitext(f.name)[1]
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                                tmp.write(f.getbuffer())
+                                tmp_path = tmp.name
+                            
+                            # Upload to Gemini
+                            gem_file = genai.upload_file(tmp_path)
+                            gemini_parts.append(gem_file)
+                            
+                            # Clean up
+                            os.remove(tmp_path)
+                    
+                    # Send message
+                    response = st.session_state.chat_session.send_message(gemini_parts)
                     
                     # Handle tools
                     while response.candidates and response.candidates[0].content.parts:
@@ -184,4 +254,4 @@ if prompt := st.chat_input("Describe the vibration data here..."):
                         message_placeholder.markdown(final_text)
                         st.session_state.messages.append({"role": "assistant", "content": final_text})
                 except Exception as e:
-                    st.error(f"Error connecting to AI: {e}. Please check your API key.")
+                    st.error(f"Error connecting to AI: {e}. Please check your API key or file format.")
