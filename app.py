@@ -155,9 +155,8 @@ else:
 # --- SIDEBAR FOR API KEY ---
 with st.sidebar:
     st.markdown("### ⚙️ Settings")
-    api_key_input = st.text_input("Gemini API Key", type="password", placeholder="Paste API Key here...")
-    if api_key_input:
-        st.session_state.api_key = api_key_input
+    st.text_input("Gemini API Key", type="password", placeholder="Paste API Key here...", key="api_key")
+    
     st.markdown("---")
     st.markdown("*Your key is secure and only used for this session.*")
 
