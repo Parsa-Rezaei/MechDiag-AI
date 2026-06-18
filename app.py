@@ -24,21 +24,23 @@ def set_background(png_file):
         page_bg_img = f'''
         <style>
         /* Add the image directly to the app background */
-        .stApp {{
+        .stApp {
+            background-color: transparent !important;
+        }
+        /* Make the watermark extremely subtle so it works in both Light and Dark mode */
+        .stApp::before {
+            content: "";
             background-image: url("data:image/png;base64,{bin_str}");
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
-        }}
-        /* Add a very dark overlay so the image becomes a subtle watermark, forcing dark mode aesthetic */
-        .stApp::before {{
-            content: "";
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(19, 19, 20, 0.93);
+            opacity: 0.08; /* Very subtle watermark */
             z-index: -1;
-        }}
+            pointer-events: none;
+        }
         </style>
         '''
         st.markdown(page_bg_img, unsafe_allow_html=True)
@@ -58,79 +60,6 @@ st.markdown("""
         margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
-        color: #ffffff !important;
-    }
-
-    /* Force ALL text to be bright white */
-    .stMarkdown, p, li, h1, h2, h3, h4, h5, h6, span, label {
-        color: #ffffff !important;
-    }
-
-    /* Make sidebar dark */
-    [data-testid="stSidebar"] {
-        background-color: #131314 !important;
-        border-right: 1px solid #444746 !important;
-    }
-    
-    /* Globally style ALL inputs, selects to be dark */
-    div[data-baseweb="input"] > div,
-    div[data-baseweb="select"] > div {
-        background-color: #1e1f20 !important;
-        border: 1px solid #444746 !important;
-        color: white !important;
-        border-radius: 6px !important;
-    }
-    
-    /* Make input text explicitly white */
-    input {
-        color: white !important;
-    }
-    input::placeholder {
-        color: #b0b0b0 !important;
-        opacity: 1 !important;
-    }
-    
-    /* Make input wrapper transparent so eye icon has dark background */
-    div[data-baseweb="input"] * {
-        background-color: transparent !important;
-    }
-    
-    /* Globally style ALL buttons to be dark */
-    button {
-        background-color: #1e1f20 !important;
-        border: 1px solid #444746 !important;
-        color: white !important;
-        border-radius: 6px !important;
-    }
-    button:hover {
-        background-color: #2b2c2f !important;
-        border: 1px solid #a8c7fa !important;
-    }
-
-    /* Fix Popovers and Dropdown Menus */
-    div[data-testid="stPopoverBody"] {
-        background-color: #131314 !important;
-        border: 1px solid #444746 !important;
-    }
-    div[data-baseweb="popover"] > div,
-    ul[data-baseweb="menu"] {
-        background-color: #1e1f20 !important;
-    }
-    li[data-baseweb="menu"], li[role="option"] {
-        background-color: transparent !important;
-        color: white !important;
-    }
-    li[data-baseweb="menu"]:hover, li[role="option"]:hover {
-        background-color: #2b2c2f !important;
-    }
-    
-    /* File uploader dropzone */
-    [data-testid="stFileUploadDropzone"] {
-        background-color: #1e1f20 !important;
-        border: 1px dashed #a8c7fa !important;
-    }
-    [data-testid="stFileUploadDropzone"] * {
-        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -258,7 +187,7 @@ if st.session_state.api_key and (st.session_state.chat_session is None or st.ses
 # Execute when there's a prompt OR audio recording
 if prompt or audio or camera_photo or (uploaded_files and st.button("Submit Attached Files")):
     if not st.session_state.api_key:
-        st.error("Please click the '⋯' button in the chat bar and enter your API Key first.")
+        st.error("Please open the Settings sidebar on the left and enter your API Key first.")
     else:
         # Determine the user text
         user_text = prompt if prompt else "Please analyze the attached media."
@@ -266,6 +195,11 @@ if prompt or audio or camera_photo or (uploaded_files and st.button("Submit Atta
             user_text = "I recorded an audio message. Please listen to it."
         if camera_photo and not prompt:
             user_text = "I took a photo. Please analyze it."
+            
+        # Save the media to session state so it survives the rerun!
+        st.session_state.pending_audio = audio
+        st.session_state.pending_camera = camera_photo
+        st.session_state.pending_files = uploaded_files
             
         st.session_state.messages.append({"role": "user", "content": user_text})
         st.rerun()
@@ -280,10 +214,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             try:
                 gemini_parts = [user_text]
                 
-                # We pull the files from the current session state or variables if they exist
+                # We pull the files from the session state to ensure they weren't wiped by the rerun
                 # 1. Handle Text/CSV/PDF files
-                if uploaded_files:
-                    for f in uploaded_files:
+                if st.session_state.get('pending_files'):
+                    for f in st.session_state.pending_files:
                         suffix = os.path.splitext(f.name)[1]
                         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                             tmp.write(f.getbuffer())
@@ -293,22 +227,29 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         os.remove(tmp_path)
                         
                 # 2. Handle Audio Recording
-                if audio:
+                if st.session_state.get('pending_audio'):
+                    audio_data = st.session_state.pending_audio
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                        tmp.write(audio['bytes'])
+                        tmp.write(audio_data['bytes'])
                         tmp_path = tmp.name
                     gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
                     gemini_parts.append(gem_file)
                     os.remove(tmp_path)
                     
                 # 3. Handle Camera Photo
-                if camera_photo:
+                if st.session_state.get('pending_camera'):
+                    cam_data = st.session_state.pending_camera
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-                        tmp.write(camera_photo.getbuffer())
+                        tmp.write(cam_data.getbuffer())
                         tmp_path = tmp.name
                     gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
                     gemini_parts.append(gem_file)
                     os.remove(tmp_path)
+                
+                # Clear pending media after sending
+                st.session_state.pending_audio = None
+                st.session_state.pending_camera = None
+                st.session_state.pending_files = None
                 
                 # Send message
                 response = st.session_state.chat_session.send_message(gemini_parts)
