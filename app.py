@@ -1,3 +1,4 @@
+# Force Streamlit to reboot
 import os
 import tempfile
 import streamlit as st
