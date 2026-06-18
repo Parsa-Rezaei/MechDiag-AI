@@ -1,0 +1,139 @@
+{
+  "test_scenarios": [
+    {
+      "scenario_id": "TEST-001",
+      "scenario_name": "Centrifugal Pump with Suspected Unbalance",
+      "difficulty": "Basic — Single Fault",
+      "machine": {
+        "machine_id": "PUMP-CW-101",
+        "machine_type": "Centrifugal Pump",
+        "driver": "3-phase AC Induction Motor",
+        "coupling_type": "Flexible jaw coupling",
+        "foundation": "Concrete base, rigid mount",
+        "rated_power_kW": 75,
+        "rated_rpm": 2960,
+        "actual_rpm": 2955,
+        "line_frequency_hz": 50,
+        "bearing_drive_end": "SKF 6310",
+        "bearing_non_drive_end": "SKF 6308"
+      },
+      "vibration_data": {
+        "measurement_point": "Motor Drive End Bearing, Horizontal",
+        "sensor": "Accelerometer, magnet mount",
+        "overall_velocity_mm_s_rms": 7.8,
+        "fft_spectrum": {
+          "description": "FFT with 1600 lines, Fmax = 500 Hz, 4 linear averages",
+          "dominant_peaks": [
+            {"frequency_hz": 49.25, "amplitude_mm_s": 7.2, "note": "1X RPM (2955/60 = 49.25 Hz)"},
+            {"frequency_hz": 98.5, "amplitude_mm_s": 0.8, "note": "2X RPM"},
+            {"frequency_hz": 100.0, "amplitude_mm_s": 0.3, "note": "2X Line Frequency"},
+            {"frequency_hz": 147.75, "amplitude_mm_s": 0.2, "note": "3X RPM"}
+          ]
+        },
+        "phase_data": {
+          "horizontal_deg": 45,
+          "vertical_deg": 138,
+          "phase_H_V_difference": 93,
+          "phase_stability": "Stable, repeatable within ±5°"
+        },
+        "axial_vibration": {
+          "overall_velocity_mm_s_rms": 1.2,
+          "1X_amplitude_mm_s": 0.9
+        }
+      },
+      "expected_diagnosis": "Unbalance — Force type. 1X RPM dominant radially, ~90° H-V phase, low axial, stable phase. ISO Zone D severity (>7.1 mm/s). Recommend immediate single-plane balance correction.",
+      "teaching_notes": "This is a textbook unbalance case. All logic tree branches are satisfied: dominant 1X, stable phase, ~90° H-V split, low axial relative to radial. The agent should give a 100% confirmed diagnosis and recommend balancing."
+    },
+    {
+      "scenario_id": "TEST-002",
+      "scenario_name": "Motor-Pump with Incomplete Data — Misalignment vs Unbalance",
+      "difficulty": "Intermediate — Ambiguous, Missing Data",
+      "machine": {
+        "machine_id": "PUMP-FW-203",
+        "machine_type": "Feed Water Pump",
+        "driver": "3-phase AC Motor",
+        "coupling_type": "Disc coupling",
+        "foundation": "Steel skid, bolted to concrete",
+        "rated_power_kW": 150,
+        "rated_rpm": 1480,
+        "actual_rpm": 1478,
+        "line_frequency_hz": 50,
+        "bearing_drive_end": "Unknown — no nameplate visible",
+        "bearing_non_drive_end": "Unknown"
+      },
+      "vibration_data": {
+        "measurement_point": "Motor Drive End Bearing, Horizontal",
+        "sensor": "Accelerometer, magnet mount",
+        "overall_velocity_mm_s_rms": 5.6,
+        "fft_spectrum": {
+          "description": "FFT with 800 lines, Fmax = 200 Hz, 4 linear averages",
+          "dominant_peaks": [
+            {"frequency_hz": 24.63, "amplitude_mm_s": 4.1, "note": "1X RPM"},
+            {"frequency_hz": 49.27, "amplitude_mm_s": 3.8, "note": "2X RPM — nearly equal to 1X!"},
+            {"frequency_hz": 73.9, "amplitude_mm_s": 0.9, "note": "3X RPM"},
+            {"frequency_hz": 100.0, "amplitude_mm_s": 0.4, "note": "2X Line Frequency"}
+          ]
+        },
+        "phase_data": "NOT AVAILABLE — technician does not have phase equipment",
+        "axial_vibration": "NOT MEASURED — only radial H taken"
+      },
+      "expected_agent_behavior": "The agent should NOT give a 100% diagnosis. It should identify that BOTH unbalance and misalignment are possible, but cannot be distinguished without phase data and axial measurements. It should specifically ask for: (1) axial vibration readings, (2) phase readings in H, V, and A directions on both sides of the coupling, (3) bearing model numbers if possible.",
+      "teaching_notes": "This scenario tests the agent's ability to REFUSE a premature diagnosis. The 2X RPM nearly equaling 1X RPM strongly suggests misalignment, but without cross-coupling phase data, the agent cannot confirm. The correct behavior is to output the Diagnostic Canvas with 'Missing Information Needed' section."
+    },
+    {
+      "scenario_id": "TEST-003",
+      "scenario_name": "Gearbox with Multiple Fault Indicators",
+      "difficulty": "Advanced — Multi-fault, Multi-modal",
+      "machine": {
+        "machine_id": "GB-CONV-005",
+        "machine_type": "Parallel Shaft Gearbox (2-stage reduction)",
+        "driver": "3-phase AC Motor via V-belt drive",
+        "application": "Conveyor belt drive",
+        "foundation": "Steel frame, bolted",
+        "rated_power_kW": 55,
+        "input_rpm": 1480,
+        "output_rpm": 185,
+        "gear_data": {
+          "stage_1_pinion_teeth": 20,
+          "stage_1_gear_teeth": 80,
+          "stage_2_pinion_teeth": 25,
+          "stage_2_gear_teeth": 50,
+          "intermediate_shaft_rpm": 370
+        },
+        "bearing_info": "Output shaft bearing: SKF 22216 E (spherical roller)",
+        "oil_analysis": {
+          "iron_ppm": 145,
+          "iron_trend": "Increasing over last 3 samples (80 → 110 → 145 ppm)",
+          "copper_ppm": 8,
+          "silicon_ppm": 22,
+          "note": "Lab flagged iron as abnormal for this gearbox type"
+        }
+      },
+      "vibration_data": {
+        "measurement_point": "Gearbox Output Bearing Housing, Horizontal",
+        "sensor": "Accelerometer, stud mount",
+        "overall_velocity_mm_s_rms": 9.2,
+        "fft_spectrum": {
+          "description": "FFT with 3200 lines, Fmax = 1000 Hz, 8 linear averages",
+          "dominant_peaks": [
+            {"frequency_hz": 3.08, "amplitude_mm_s": 2.1, "note": "1X output shaft (185 RPM)"},
+            {"frequency_hz": 6.17, "amplitude_mm_s": 3.5, "note": "2X output shaft"},
+            {"frequency_hz": 9.25, "amplitude_mm_s": 1.8, "note": "3X output shaft"},
+            {"frequency_hz": 154.17, "amplitude_mm_s": 5.2, "note": "Stage 2 GMF = 50 teeth × 185/60 = ~154 Hz"},
+            {"frequency_hz": 308.33, "amplitude_mm_s": 2.8, "note": "2X Stage 2 GMF"},
+            {"frequency_hz": 151.08, "amplitude_mm_s": 1.5, "note": "Sideband: GMF - 1X output"},
+            {"frequency_hz": 157.25, "amplitude_mm_s": 1.4, "note": "Sideband: GMF + 1X output"},
+            {"frequency_hz": 148.0, "amplitude_mm_s": 0.9, "note": "Sideband: GMF - 2X output"},
+            {"frequency_hz": 160.33, "amplitude_mm_s": 0.8, "note": "Sideband: GMF + 2X output"},
+            {"frequency_hz": 462.5, "amplitude_mm_s": 1.1, "note": "3X Stage 2 GMF"}
+          ],
+          "noise_floor": "Elevated broadband noise between 500-800 Hz"
+        },
+        "thermal_observation": "Output bearing housing noticeably warm to touch (~65°C by IR gun)",
+        "acoustic_observation": "Growling sound from gearbox, increasing over past 2 weeks per operator report"
+      },
+      "expected_diagnosis": "Multiple faults: (1) Gear wear on Stage 2 — strong sidebands around GMF spaced at output shaft RPM, elevated GMF harmonics. (2) Possible output bearing degradation — elevated broadband noise in 500-800 Hz range, thermal elevation, increasing iron in oil. Agent should request envelope spectrum of output bearing and confirm bearing model geometry to calculate defect frequencies.",
+      "teaching_notes": "This is a complex, realistic scenario combining gear wear with early bearing degradation. The oil analysis cross-references with vibration data. The agent should handle both fault branches simultaneously and prioritize based on severity. Iron trending at 145 ppm with increasing trajectory is a strong corroborating indicator."
+    }
+  ]
+}
