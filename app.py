@@ -66,6 +66,18 @@ st.markdown("""
         color: #ffffff !important;
     }
 
+    /* Force the sidebar to be dark to match the theme */
+    [data-testid="stSidebar"] {
+        background-color: #131314 !important;
+        border-right: 1px solid #444746 !important;
+    }
+    
+    /* Make sidebar inputs dark */
+    [data-testid="stSidebar"] div[data-baseweb="input"] > div {
+        background-color: #1e1f20 !important;
+        border: 1px solid #444746 !important;
+    }
+
     /* THE UNIFIED GEMINI PILL HACK */
     /* Target the exact row directly below the anchor */
     div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] {
