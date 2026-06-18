@@ -66,16 +66,29 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Force the sidebar to be dark to match the theme */
+    /* Make sidebar dark */
     [data-testid="stSidebar"] {
         background-color: #131314 !important;
         border-right: 1px solid #444746 !important;
     }
     
-    /* Make sidebar inputs dark */
-    [data-testid="stSidebar"] div[data-baseweb="input"] > div {
-        background-color: #1e1f20 !important;
+    /* Fix sidebar input box background and text visibility */
+    [data-testid="stSidebar"] div[data-baseweb="input"] {
+        background-color: #2b2c2f !important;
         border: 1px solid #444746 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Make everything inside the input box transparent with white text */
+    [data-testid="stSidebar"] div[data-baseweb="input"] * {
+        background-color: transparent !important;
+        color: #ffffff !important;
+    }
+    
+    /* Make the placeholder text light grey so it is readable */
+    [data-testid="stSidebar"] input::placeholder {
+        color: #b0b0b0 !important;
+        opacity: 1 !important;
     }
 
     /* THE UNIFIED GEMINI PILL HACK */
