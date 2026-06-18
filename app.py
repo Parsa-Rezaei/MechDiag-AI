@@ -10,7 +10,7 @@ from streamlit_mic_recorder import mic_recorder
 # Set up page config
 st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centered", initial_sidebar_state="collapsed")
 
-# Minimal CSS to hide footer and header and fix text visibility
+# Custom CSS for the Unified Chat Pill
 st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
@@ -22,18 +22,18 @@ st.markdown("""
         text-align: center;
         font-size: 2.5rem;
         font-weight: 500;
-        margin-top: 15vh;
+        margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
         color: #ffffff !important;
     }
     
-    /* Force ALL text to be bright white and readable */
+    /* Force ALL text to be bright white */
     .stMarkdown, p, li, h1, h2, h3, h4, h5, h6, span {
         color: #ffffff !important;
     }
     
-    /* Create a visible 'canvas' card for the AI results */
+    /* Chat bubbles canvas */
     .stChatMessage {
         background-color: #1e1f20 !important;
         border: 1px solid #444746 !important;
@@ -42,14 +42,45 @@ st.markdown("""
         margin-bottom: 15px !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
     }
+
+    /* THE UNIFIED GEMINI PILL HACK */
+    /* Target the exact row directly below the anchor */
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] {
+        background-color: #1e1f20 !important;
+        border-radius: 50px !important;
+        padding: 8px 20px !important;
+        align-items: center !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+        border: 1px solid #444746 !important;
+        margin-top: 30px !important;
+        margin-bottom: 50px !important;
+    }
+
+    /* Strip background and borders from components inside the pill */
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="input"] > div {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
     
-    /* Center container */
-    .controls-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="select"] > div {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Style buttons inside the pill */
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #e3e3e3 !important;
+        padding: 5px !important;
+    }
+
+    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button:hover {
+        background-color: rgba(255,255,255,0.1) !important;
+        border-radius: 50% !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -120,47 +151,47 @@ def init_agent(api_key, model_name):
     )
     return client, chat
 
-# Only show the initial greeting if there are no messages
+# Title
 if not st.session_state.messages:
     st.markdown('<div class="gemini-title">What can I help with, Engineer?</div>', unsafe_allow_html=True)
 else:
-    # Display chat history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-# --- CENTERED CONTROLS ABOVE CHAT INPUT ---
-col1, col2, col3, col4, col5 = st.columns([1, 1, 3, 3, 1])
+# --- THE UNIFIED CHAT PILL ---
+# This invisible anchor lets our CSS target the row directly below it
+st.markdown('<div id="chat-bar-anchor"></div>', unsafe_allow_html=True)
+col1, col2, col3, col4, col5 = st.columns([1, 7, 3, 1, 1], gap="small")
 
-with col2:
-    # The "+" button using st.popover to hide messy inputs
+with col1:
     with st.popover("➕"):
         st.markdown("**Attach Media**")
-        uploaded_files = st.file_uploader("Files", accept_multiple_files=True, label_visibility="collapsed")
+        uploaded_files = st.file_uploader("Upload Files", accept_multiple_files=True, label_visibility="collapsed")
         st.markdown("**Camera**")
-        camera_photo = st.camera_input("Camera", label_visibility="collapsed")
+        camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
+
+with col2:
+    prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed")
 
 with col3:
     selected_model = st.selectbox(
         "Model",
-        (
-            "gemini-3.5-flash",
-            "gemini-3-flash",
-            "gemini-2.5-flash",
-            "gemini-1.5-flash-latest",
-        ),
+        ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest"),
         index=3,
         label_visibility="collapsed"
     )
 
 with col4:
-    # Key input
-    api_key = st.text_input("API Key", type="password", placeholder="Enter API Key...", label_visibility="collapsed")
-    if api_key:
-        st.session_state.api_key = api_key
-
+    with st.popover("⋯"):
+        st.markdown("**Settings**")
+        api_key_input = st.text_input("API Key", type="password", placeholder="Paste API Key here...")
+        if api_key_input:
+            st.session_state.api_key = api_key_input
+            
 with col5:
     audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
+
 
 # --- RE-INIT AGENT IF SETTINGS CHANGE ---
 if st.session_state.api_key and (st.session_state.chat_session is None or st.session_state.current_model != selected_model):
@@ -172,13 +203,10 @@ if st.session_state.api_key and (st.session_state.chat_session is None or st.ses
     except Exception as e:
         st.error(f"Error initializing agent: {e}")
 
-# --- CHAT INPUT ---
-prompt = st.chat_input("Ask MechDiag...")
-
 # Execute when there's a prompt OR audio recording
-if prompt or audio or camera_photo:
+if prompt or audio or camera_photo or (uploaded_files and st.button("Submit Attached Files")):
     if not st.session_state.api_key:
-        st.error("Please enter an API Key in the field above first.")
+        st.error("Please click the '⋯' button in the chat bar and enter your API Key first.")
     else:
         # Determine the user text
         user_text = prompt if prompt else "Please analyze the attached media."
@@ -188,52 +216,54 @@ if prompt or audio or camera_photo:
             user_text = "I took a photo. Please analyze it."
             
         st.session_state.messages.append({"role": "user", "content": user_text})
-        with st.chat_message("user"):
-            st.markdown(user_text)
-            if uploaded_files: st.caption(f"📎 Attached {len(uploaded_files)} file(s)")
-            if audio: st.caption("🎙️ Attached audio recording")
-            if camera_photo: st.caption("📷 Attached camera photo")
+        st.rerun()
 
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            with st.spinner("Analyzing..."):
-                try:
-                    gemini_parts = [user_text]
-                    
-                    # 1. Handle Text/CSV/PDF files
-                    if uploaded_files:
-                        for f in uploaded_files:
-                            suffix = os.path.splitext(f.name)[1]
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                                tmp.write(f.getbuffer())
-                                tmp_path = tmp.name
-                            gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
-                            gemini_parts.append(gem_file)
-                            os.remove(tmp_path)
-                            
-                    # 2. Handle Audio Recording
-                    if audio:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                            tmp.write(audio['bytes'])
+# --- TRIGGER EXECUTION ---
+# This block handles the actual generation after a rerun so the user's message appears immediately
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    user_text = st.session_state.messages[-1]["content"]
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        with st.spinner("Analyzing..."):
+            try:
+                gemini_parts = [user_text]
+                
+                # We pull the files from the current session state or variables if they exist
+                # 1. Handle Text/CSV/PDF files
+                if uploaded_files:
+                    for f in uploaded_files:
+                        suffix = os.path.splitext(f.name)[1]
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                            tmp.write(f.getbuffer())
                             tmp_path = tmp.name
                         gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
                         gemini_parts.append(gem_file)
                         os.remove(tmp_path)
                         
-                    # 3. Handle Camera Photo
-                    if camera_photo:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-                            tmp.write(camera_photo.getbuffer())
-                            tmp_path = tmp.name
-                        gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
-                        gemini_parts.append(gem_file)
-                        os.remove(tmp_path)
+                # 2. Handle Audio Recording
+                if audio:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                        tmp.write(audio['bytes'])
+                        tmp_path = tmp.name
+                    gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
+                    gemini_parts.append(gem_file)
+                    os.remove(tmp_path)
                     
-                    # Send message
-                    response = st.session_state.chat_session.send_message(gemini_parts)
-                    final_text = response.text
-                    message_placeholder.markdown(final_text)
-                    st.session_state.messages.append({"role": "assistant", "content": final_text})
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error connecting to AI: {e}")
+                # 3. Handle Camera Photo
+                if camera_photo:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                        tmp.write(camera_photo.getbuffer())
+                        tmp_path = tmp.name
+                    gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
+                    gemini_parts.append(gem_file)
+                    os.remove(tmp_path)
+                
+                # Send message
+                response = st.session_state.chat_session.send_message(gemini_parts)
+                final_text = response.text
+                message_placeholder.markdown(final_text)
+                st.session_state.messages.append({"role": "assistant", "content": final_text})
+            except Exception as e:
+                st.error(f"Error connecting to AI: {e}")
+                # Remove the failed message so they can try again
+                st.session_state.messages.pop()
