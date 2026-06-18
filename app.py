@@ -72,72 +72,65 @@ st.markdown("""
         border-right: 1px solid #444746 !important;
     }
     
-    /* Fix sidebar input box background and text visibility */
-    [data-testid="stSidebar"] div[data-baseweb="input"] {
-        background-color: #2b2c2f !important;
+    /* Globally style ALL inputs, selects to be dark */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="select"] > div {
+        background-color: #1e1f20 !important;
         border: 1px solid #444746 !important;
+        color: white !important;
         border-radius: 6px !important;
     }
     
-    /* Make everything inside the input box transparent with white text */
-    [data-testid="stSidebar"] div[data-baseweb="input"] * {
-        background-color: transparent !important;
-        color: #ffffff !important;
+    /* Make input text explicitly white */
+    input {
+        color: white !important;
     }
-    
-    /* Make the placeholder text light grey so it is readable */
-    [data-testid="stSidebar"] input::placeholder {
+    input::placeholder {
         color: #b0b0b0 !important;
         opacity: 1 !important;
     }
-
-    /* THE UNIFIED GEMINI PILL HACK */
-    /* Target the exact row directly below the anchor */
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] {
+    
+    /* Make input wrapper transparent so eye icon has dark background */
+    div[data-baseweb="input"] * {
+        background-color: transparent !important;
+    }
+    
+    /* Globally style ALL buttons to be dark */
+    button {
         background-color: #1e1f20 !important;
-        border-radius: 50px !important;
-        padding: 8px 20px !important;
-        align-items: center !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
         border: 1px solid #444746 !important;
-        margin-top: 30px !important;
-        margin-bottom: 50px !important;
+        color: white !important;
+        border-radius: 6px !important;
+    }
+    button:hover {
+        background-color: #2b2c2f !important;
+        border: 1px solid #a8c7fa !important;
     }
 
-    /* Strip background and borders from components inside the pill, and force text color to white */
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="input"] > div {
+    /* Fix Popovers and Dropdown Menus */
+    div[data-testid="stPopoverBody"] {
+        background-color: #131314 !important;
+        border: 1px solid #444746 !important;
+    }
+    div[data-baseweb="popover"] > div,
+    ul[data-baseweb="menu"] {
+        background-color: #1e1f20 !important;
+    }
+    li[data-baseweb="menu"], li[role="option"] {
         background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+        color: white !important;
+    }
+    li[data-baseweb="menu"]:hover, li[role="option"]:hover {
+        background-color: #2b2c2f !important;
     }
     
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] input {
-        color: #ffffff !important;
+    /* File uploader dropzone */
+    [data-testid="stFileUploadDropzone"] {
+        background-color: #1e1f20 !important;
+        border: 1px dashed #a8c7fa !important;
     }
-    
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="select"] > div {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: #ffffff !important;
-    }
-    
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] div[data-baseweb="select"] span {
-        color: #ffffff !important;
-    }
-    
-    /* Style buttons inside the pill */
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: #e3e3e3 !important;
-        padding: 5px !important;
-    }
-
-    div:has(#chat-bar-anchor) + div.element-container > div[data-testid="stHorizontalBlock"] button:hover {
-        background-color: rgba(255,255,255,0.1) !important;
-        border-radius: 50% !important;
+    [data-testid="stFileUploadDropzone"] * {
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
