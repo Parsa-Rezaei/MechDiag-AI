@@ -1,0 +1,23 @@
+====================================================
+MAINTENANCE INSPECTION REPORT
+====================================================
+Equipment ID: PUMP-CW-101
+Equipment Type: Centrifugal Pump
+Rated RPM: 2955 RPM
+Drive: 75 kW AC Motor
+Coupling: Flexible jaw coupling
+Foundation: Concrete base, rigid mount
+
+INSPECTION NOTES (Date: June 18, 2026):
+Operator reported increased vibration and noise from the pump over the last 48 hours.
+The overall vibration velocity on the motor drive end (horizontal direction) was measured at 7.8 mm/s RMS.
+Axial vibration is relatively low at 1.2 mm/s RMS.
+
+Phase Analysis:
+- Horizontal Phase: 45 degrees
+- Vertical Phase: 138 degrees
+- Phase readings are stable and repeatable within +/- 5 degrees.
+
+ATTACHMENTS:
+- pump_fft_spectrum.csv (Contains frequency and amplitude data)
+====================================================
