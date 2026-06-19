@@ -31,10 +31,10 @@ def set_background(image_file):
         <style>
         [data-testid="stSidebar"] {{
             background-image: url("data:image/png;base64,{bin_str}") !important;
-            background-size: cover !important;
+            background-size: 100% auto !important;
             background-repeat: no-repeat !important;
             background-attachment: fixed !important;
-            background-position: center !important;
+            background-position: bottom center !important;
         }}
         </style>
         '''
