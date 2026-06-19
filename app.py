@@ -46,10 +46,10 @@ def set_background(png_file):
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                /* Dark mode: Boost brightness heavily so the faint gray lines glow bright white! */
-                filter: brightness(4);
-                mix-blend-mode: lighten;
-                opacity: 1.0;
+                /* Dark mode: The original image without change */
+                filter: none;
+                mix-blend-mode: normal;
+                opacity: 0.5;
             }}
         }}
         </style>
