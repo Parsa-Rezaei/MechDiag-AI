@@ -19,35 +19,33 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
-def set_background(png_file):
+def set_background_theme(light_file, dark_file):
     try:
-        bin_str = get_base64_of_bin_file(png_file)
+        with open(light_file, "rb") as f:
+            light_str = base64.b64encode(f.read()).decode()
+        with open(dark_file, "rb") as f:
+            dark_str = base64.b64encode(f.read()).decode()
+            
         page_bg_img = f'''
         <style>
-        .stApp {{
-            background-color: transparent !important;
-        }}
         .stApp::before {{
             content: "";
-            background-image: url("data:image/png;base64,{bin_str}");
+            background-image: url("data:image/png;base64,{light_str}");
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            opacity: 0.4;
+            opacity: 0.7;
             z-index: -1;
             pointer-events: none;
-            /* Light mode: Invert dark image, then darken the lines so they show up strongly */
-            filter: invert(1) brightness(0.3);
             mix-blend-mode: multiply;
-            opacity: 0.7;
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                /* Dark mode: The exact original image, but with boosted brightness so the lines are visible! */
-                filter: brightness(5);
+                background-image: url("data:image/png;base64,{dark_str}");
+                filter: none;
                 mix-blend-mode: normal;
                 opacity: 1.0;
             }}
@@ -58,7 +56,7 @@ def set_background(png_file):
     except Exception:
         pass
 
-set_background('bg_pattern.png')
+set_background_theme('bg_pattern_light.png', 'bg_pattern_dark.png')
 
 # Custom CSS to force the exact Gemini Dark Pill design
 st.markdown("""
