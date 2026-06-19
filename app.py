@@ -14,53 +14,60 @@ st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centere
 
 # --- BACKGROUND IMAGE WATERMARK ---
 @st.cache_data
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-import os
+def get_transparent_bg_base64(image_file):
+    from PIL import Image
+    import io
+    import os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    img_path = os.path.join(base_dir, image_file)
+    
+    img = Image.open(img_path).convert("RGBA")
+    datas = img.getdata()
+    
+    new_data = []
+    for item in datas:
+        # The background is black, so make dark pixels fully transparent
+        if item[0] < 10 and item[1] < 10 and item[2] < 10:
+            new_data.append((0, 0, 0, 0))
+        else:
+            # Make the lines pure white so the CSS mask is fully opaque
+            new_data.append((255, 255, 255, 255))
+            
+    img.putdata(new_data)
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode()
 
 def set_background(image_file):
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(base_dir, image_file), "rb") as f:
-            bin_str = base64.b64encode(f.read()).decode()
+        bin_str = get_transparent_bg_base64(image_file)
             
         page_bg_img = f'''
         <style>
-        /* Force all main Streamlit containers to be transparent so our custom background is visible! */
-        body, .stApp, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {{
+        /* Force inner containers to be transparent so the watermark shows through */
+        [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {{
             background-color: transparent !important;
         }}
         
-        #custom-bg {{
-            background-image: url("data:image/png;base64,{bin_str}");
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-position: center;
+        .stApp::before {{
+            content: "";
+            /* Use Streamlit's dynamic text color for the lines! */
+            background-color: var(--text-color);
+            -webkit-mask-image: url("data:image/png;base64,{bin_str}");
+            -webkit-mask-size: cover;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            mask-image: url("data:image/png;base64,{bin_str}");
+            mask-size: cover;
+            mask-repeat: no-repeat;
+            mask-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: -999;
+            z-index: -1;
             pointer-events: none;
-            
-            /* Light mode default: Invert dark image, then darken the lines so they show up strongly */
-            filter: invert(1) brightness(0.3);
-            mix-blend-mode: multiply;
-            opacity: 0.7;
-        }}
-        
-        @media (prefers-color-scheme: dark) {{
-            #custom-bg {{
-                /* Dark mode: Boost brightness to make lines glow, keep pure black background */
-                filter: brightness(5);
-                mix-blend-mode: normal;
-                opacity: 1.0;
-            }}
+            opacity: 0.15; /* Subtle watermark */
         }}
         </style>
-        <div id="custom-bg"></div>
         '''
         st.markdown(page_bg_img, unsafe_allow_html=True)
     except Exception as e:
@@ -242,7 +249,7 @@ with col_send:
 with col3:
     selected_model = st.selectbox(
         "Model",
-        ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash"),
+        ("gemini-3.5-flash", "gemini-3.1-pro", "gemini-2.5-flash"),
         index=0,
         label_visibility="collapsed"
     )
