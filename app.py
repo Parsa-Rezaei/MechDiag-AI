@@ -44,15 +44,10 @@ def set_background(image_file):
 
 set_background('bg_pattern.png')
 
-# Custom CSS to force the exact Gemini Dark Pill design and Neon Cyan Diagnostic aesthetic
+# Custom CSS to force the exact Gemini Dark Pill design
 st.markdown("""
 <style>
-    /* Deep blue-black app background to match the dashboard */
-    .stApp, [data-testid="stAppViewContainer"] {
-        background-color: #03080F !important;
-    }
-
-    /* Glowing Title */
+    /* Make the title centered and large */
     .gemini-title {
         text-align: center;
         font-size: 2.5rem;
@@ -60,38 +55,6 @@ st.markdown("""
         margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
-        color: #00E5FF !important;
-        text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-        font-family: 'Courier New', Courier, monospace;
-    }
-
-    /* First Page Boxes (Inputs, Chat Input, Selectboxes, Buttons) */
-    div[data-baseweb="input"] > div,
-    div[data-testid="stChatInput"] > div,
-    div[data-baseweb="select"] > div,
-    button[kind="secondary"],
-    button[kind="primary"] {
-        background-color: #0A1929 !important;
-        border: 1px solid #005C7A !important;
-        color: #00E5FF !important;
-        border-radius: 8px !important;
-        transition: all 0.3s ease;
-    }
-
-    /* Hover & Focus Glow Effects for the Boxes */
-    div[data-baseweb="input"] > div:focus-within,
-    div[data-testid="stChatInput"] > div:focus-within,
-    div[data-baseweb="select"] > div:focus-within,
-    button[kind="secondary"]:hover,
-    button[kind="primary"]:hover {
-        border-color: #00E5FF !important;
-        box-shadow: 0 0 12px rgba(0, 229, 255, 0.5) !important;
-        color: #FFFFFF !important;
-    }
-    
-    /* Make text inside inputs cyan */
-    input, textarea {
-        color: #00E5FF !important;
     }
 </style>
 """, unsafe_allow_html=True)
