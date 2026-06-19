@@ -1,4 +1,4 @@
-from PIL import Image, ImageEnhance
+from PIL import Image
 import sys
 import shutil
 
@@ -14,14 +14,8 @@ try:
     if bbox:
         img = img.crop(bbox)
         
-    # Slightly dim it so it sits in the background, but keep contrast high
-    enhancer_b = ImageEnhance.Brightness(img)
-    img = enhancer_b.enhance(0.75)
-    
-    enhancer_c = ImageEnhance.Contrast(img)
-    img = enhancer_c.enhance(1.2)
-    
+    # ABSOLUTELY NO DIMMING. Max brightness, max contrast native to the generated image.
     img.save('bg_pattern.png')
-    print("Successfully saved highly detailed vibration cropped image!")
+    print("Successfully saved RAW highly detailed vibration cropped image with NO DIMMING!")
 except Exception as e:
     print(f"Error: {e}")
