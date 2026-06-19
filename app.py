@@ -46,8 +46,8 @@ def set_background(png_file):
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                /* Dark mode: The exact original image, no transparency, no blending */
-                filter: none;
+                /* Dark mode: The exact original image, but with boosted brightness so the lines are visible! */
+                filter: brightness(5);
                 mix-blend-mode: normal;
                 opacity: 1.0;
             }}
