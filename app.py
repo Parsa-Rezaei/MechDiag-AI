@@ -36,7 +36,7 @@ def set_background(png_file):
             background-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            opacity: 0.08;
+            opacity: 0.4;
             z-index: -1;
             pointer-events: none;
             /* Light mode: Invert the dark image to make a white bg with black lines */
@@ -48,7 +48,7 @@ def set_background(png_file):
                 /* Dark mode: Keep the original dark image */
                 filter: invert(0);
                 mix-blend-mode: screen;
-                opacity: 0.12;
+                opacity: 0.6;
             }}
         }}
         </style>
