@@ -32,7 +32,7 @@ def set_background(image_file):
         [data-testid="stSidebar"] {{
             background-color: #000000 !important;
             background-image: url("data:image/png;base64,{bin_str}") !important;
-            background-size: 100% calc(100vh - 310px) !important;
+            background-size: 100% calc(100vh - 320px) !important;
             background-repeat: no-repeat !important;
             background-position: bottom center !important;
         }}
