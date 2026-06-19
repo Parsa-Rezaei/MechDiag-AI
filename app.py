@@ -120,10 +120,10 @@ if "trigger_submit" not in st.session_state:
     st.session_state.trigger_submit = False
 if "submitted_text" not in st.session_state:
     st.session_state.submitted_text = ""
-if "last_audio" not in st.session_state:
-    st.session_state.last_audio = None
-if "last_camera" not in st.session_state:
-    st.session_state.last_camera = None
+if "last_audio_id" not in st.session_state:
+    st.session_state.last_audio_id = None
+if "last_camera_id" not in st.session_state:
+    st.session_state.last_camera_id = None
 
 def handle_text_submit():
     if st.session_state.get("prompt_input"):
@@ -199,8 +199,18 @@ if st.session_state.api_key and (st.session_state.chat_session is None or st.ses
         st.error(f"Error initializing agent: {e}")
 
 # Check for new media that hasn't been processed yet
-is_new_audio = audio is not None and audio != st.session_state.last_audio
-is_new_camera = camera_photo is not None and camera_photo != st.session_state.last_camera
+is_new_audio = False
+if audio is not None:
+    audio_id = audio.get("id")
+    if audio_id != st.session_state.last_audio_id:
+        is_new_audio = True
+
+is_new_camera = False
+if camera_photo is not None:
+    cam_id = camera_photo.file_id
+    if cam_id != st.session_state.last_camera_id:
+        is_new_camera = True
+
 is_files_submit = uploaded_files and st.button("Submit Attached Files")
 
 # Execute when there's a prompt OR new audio/camera/files
@@ -219,8 +229,8 @@ if st.session_state.trigger_submit or is_new_audio or is_new_camera or is_files_
             user_text = "I took a photo. Please analyze it."
             
         # Update last known states to prevent infinite loops
-        if is_new_audio: st.session_state.last_audio = audio
-        if is_new_camera: st.session_state.last_camera = camera_photo
+        if is_new_audio: st.session_state.last_audio_id = audio.get("id")
+        if is_new_camera: st.session_state.last_camera_id = camera_photo.file_id
             
         # Save the media to session state so it survives the rerun!
         st.session_state.pending_audio = audio if is_new_audio else None
