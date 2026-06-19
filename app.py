@@ -30,7 +30,7 @@ def set_background(png_file):
         .stApp::before {{
             content: "";
             background-image: url("data:image/png;base64,{bin_str}");
-            background-size: 60%;
+            background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
@@ -39,13 +39,16 @@ def set_background(png_file):
             opacity: 0.08;
             z-index: -1;
             pointer-events: none;
-            mix-blend-mode: multiply; /* Removes white background in light mode */
+            /* Light mode: Invert the dark image to make a white bg with black lines */
+            filter: invert(1);
+            mix-blend-mode: multiply;
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                filter: invert(1); /* Turns black lines white */
-                mix-blend-mode: screen; /* Removes black background in dark mode */
-                opacity: 0.12; /* Slightly brighter for dark mode visibility */
+                /* Dark mode: Keep the original dark image */
+                filter: invert(0);
+                mix-blend-mode: screen;
+                opacity: 0.12;
             }}
         }}
         </style>
@@ -54,7 +57,7 @@ def set_background(png_file):
     except Exception:
         pass
 
-set_background('machine_bg.png')
+set_background('bg_pattern.png')
 
 # Custom CSS to force the exact Gemini Dark Pill design
 st.markdown("""
