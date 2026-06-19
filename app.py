@@ -115,6 +115,8 @@ if "current_model" not in st.session_state:
     st.session_state.current_model = None
 if "api_key" not in st.session_state:
     st.session_state.api_key = ""
+if "available_models" not in st.session_state:
+    st.session_state.available_models = []
 if "trigger_submit" not in st.session_state:
     st.session_state.trigger_submit = False
 if "submitted_text" not in st.session_state:
@@ -168,8 +170,24 @@ else:
 # --- SIDEBAR FOR API KEY ---
 with st.sidebar:
     st.markdown("### ⚙️ Settings")
-    st.text_input("Gemini API Key", type="password", placeholder="Paste API Key here...", key="api_key")
+    api_key_input = st.text_input("Gemini API Key", type="password", placeholder="Paste API Key here...")
     
+    if api_key_input and api_key_input != st.session_state.api_key:
+        st.session_state.api_key = api_key_input
+        with st.spinner("Fetching your authorized models..."):
+            try:
+                from google import genai
+                tmp_client = genai.Client(api_key=api_key_input)
+                fetched = []
+                for m in tmp_client.models.list():
+                    name = m.name.replace("models/", "")
+                    if "gemini" in name:
+                        fetched.append(name)
+                if fetched:
+                    st.session_state.available_models = fetched
+            except Exception as e:
+                pass
+                
     st.markdown("---")
     st.markdown("*Your key is secure and only used for this session.*")
 
@@ -214,9 +232,11 @@ with col_send:
     st.button("↑", on_click=handle_text_submit, use_container_width=True)
     
 with col3:
+    default_models = ("gemini-3.5-flash", "gemini-3.1-pro", "gemini-2.0-flash", "gemini-1.5-pro")
+    model_options = st.session_state.available_models if st.session_state.available_models else default_models
     selected_model = st.selectbox(
         "Model",
-        ("gemini-3.5-flash", "gemini-3.1-pro", "gemini-1.5-flash-8b", "gemini-1.0-pro"),
+        model_options,
         index=0,
         label_visibility="collapsed"
     )
