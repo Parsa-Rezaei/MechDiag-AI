@@ -137,20 +137,14 @@ if "error_state" not in st.session_state:
     st.session_state.error_state = None
 if "failed_text" not in st.session_state:
     st.session_state.failed_text = ""
+if "last_processed_stt" not in st.session_state:
+    st.session_state.last_processed_stt = None
 
 def handle_text_submit():
     if st.session_state.get("prompt_input"):
         st.session_state.trigger_submit = True
         st.session_state.submitted_text = st.session_state.prompt_input
         st.session_state.prompt_input = ""
-
-def stt_callback():
-    if st.session_state.get("mic_stt_output"):
-        current = st.session_state.get("prompt_input", "")
-        if current:
-            st.session_state.prompt_input = current + " " + st.session_state.mic_stt_output
-        else:
-            st.session_state.prompt_input = st.session_state.mic_stt_output
 
 def init_agent(api_key, model_name):
     client = genai.Client(api_key=api_key)
@@ -204,6 +198,15 @@ with col1:
         camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
         
 with col2:
+    new_stt = st.session_state.get("mic_stt_output")
+    if new_stt and new_stt != st.session_state.get("last_processed_stt"):
+        st.session_state.last_processed_stt = new_stt
+        current = st.session_state.get("prompt_input", "")
+        if current:
+            st.session_state.prompt_input = current + " " + new_stt
+        else:
+            st.session_state.prompt_input = new_stt
+            
     prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed", key="prompt_input", on_change=handle_text_submit)
     
 with col3:
@@ -215,7 +218,7 @@ with col3:
     )
             
 with col5:
-    speech_to_text(start_prompt="🎙️", stop_prompt="🛑", key="mic_stt", callback=stt_callback, language='en', use_container_width=True)
+    speech_to_text(start_prompt="🎙️", stop_prompt="🛑", key="mic_stt", language='en', use_container_width=True)
 
 
 # --- RE-INIT AGENT IF SETTINGS CHANGE ---
