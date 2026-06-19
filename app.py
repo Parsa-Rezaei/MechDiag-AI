@@ -29,12 +29,7 @@ def set_background(image_file):
             
         page_bg_img = f'''
         <style>
-        /* Force inner containers to be transparent so the watermark shows through */
-        [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {{
-            background-color: transparent !important;
-        }}
-        
-        .stApp {{
+        [data-testid="stSidebar"] {{
             background-image: url("data:image/png;base64,{bin_str}") !important;
             background-size: cover !important;
             background-repeat: no-repeat !important;
