@@ -19,11 +19,14 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
+import os
+
 def set_background_theme(light_file, dark_file):
     try:
-        with open(light_file, "rb") as f:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(base_dir, light_file), "rb") as f:
             light_str = base64.b64encode(f.read()).decode()
-        with open(dark_file, "rb") as f:
+        with open(os.path.join(base_dir, dark_file), "rb") as f:
             dark_str = base64.b64encode(f.read()).decode()
             
         page_bg_img = f'''
@@ -53,8 +56,8 @@ def set_background_theme(light_file, dark_file):
         </style>
         '''
         st.markdown(page_bg_img, unsafe_allow_html=True)
-    except Exception:
-        pass
+    except Exception as e:
+        st.error(f"Could not load background images: {e}")
 
 set_background_theme('bg_pattern_light.png', 'bg_pattern_dark.png')
 
@@ -190,6 +193,7 @@ with st.sidebar:
     st.markdown("*Your key is secure and only used for this session.*")
 
 # --- THE UNIFIED CHAT PILL ---
+attachment_display = st.empty()
 # This invisible anchor lets our CSS target the row directly below it
 st.markdown('<div id="chat-bar-anchor"></div>', unsafe_allow_html=True)
 col1, col2, col_send, col3, col5 = st.columns([1, 7, 1, 3, 1], gap="small")
@@ -200,6 +204,13 @@ with col1:
         uploaded_files = st.file_uploader("Upload Files", accept_multiple_files=True, label_visibility="collapsed")
         st.markdown("**Camera**")
         camera_photo = st.camera_input("Take Photo", label_visibility="collapsed")
+        
+if uploaded_files:
+    file_names = [f.name for f in uploaded_files]
+    attachment_display.markdown(
+        f"<div style='color: #aaa; font-size: 0.9em; margin-bottom: 5px; padding-left: 15px;'>📎 <b>Ready to send:</b> {', '.join(file_names)}</div>", 
+        unsafe_allow_html=True
+    )
         
 with col2:
     new_stt = st.session_state.get("mic_stt_output")
@@ -265,8 +276,8 @@ if st.session_state.trigger_submit or is_new_camera:
         if is_new_camera: st.session_state.last_camera_id = camera_photo.file_id
             
         # Save the media to session state so it survives the rerun!
-        st.session_state.pending_camera = camera_photo if is_new_camera else None
-        st.session_state.pending_files = uploaded_files if is_files_submit else None
+        st.session_state.pending_camera = camera_photo
+        st.session_state.pending_files = uploaded_files
             
         st.session_state.messages.append({"role": "user", "content": user_text})
         st.session_state.trigger_submit = False # Reset the submit flag
