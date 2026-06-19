@@ -201,11 +201,12 @@ with col2:
     new_stt = st.session_state.get("mic_stt_output")
     if new_stt and new_stt != st.session_state.get("last_processed_stt"):
         st.session_state.last_processed_stt = new_stt
-        current = st.session_state.get("prompt_input", "")
-        if current:
-            st.session_state.prompt_input = current + " " + new_stt
-        else:
-            st.session_state.prompt_input = new_stt
+        if isinstance(new_stt, str) and new_stt.strip():
+            current = st.session_state.get("prompt_input", "")
+            if isinstance(current, str) and current.strip():
+                st.session_state.prompt_input = current + " " + new_stt
+            else:
+                st.session_state.prompt_input = new_stt
             
     prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed", key="prompt_input", on_change=handle_text_submit)
     
