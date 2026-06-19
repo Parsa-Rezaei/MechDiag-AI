@@ -142,9 +142,14 @@ if "last_processed_stt" not in st.session_state:
     st.session_state.last_processed_stt = None
 
 def handle_text_submit():
-    if st.session_state.get("prompt_input"):
+    prompt = st.session_state.get("prompt_input", "")
+    if isinstance(prompt, str) and prompt.strip():
         st.session_state.trigger_submit = True
-        st.session_state.submitted_text = st.session_state.prompt_input
+        st.session_state.submitted_text = prompt.strip()
+        st.session_state.prompt_input = ""
+    else:
+        st.session_state.trigger_submit = True
+        st.session_state.submitted_text = "Please analyze the attached files."
         st.session_state.prompt_input = ""
 
 def init_agent(api_key, model_name):
@@ -189,7 +194,7 @@ with st.sidebar:
 # --- THE UNIFIED CHAT PILL ---
 # This invisible anchor lets our CSS target the row directly below it
 st.markdown('<div id="chat-bar-anchor"></div>', unsafe_allow_html=True)
-col1, col2, col3, col5 = st.columns([1, 8, 3, 1], gap="small")
+col1, col2, col_send, col3, col5 = st.columns([1, 7, 1, 3, 1], gap="small")
 
 with col1:
     with st.popover("➕"):
@@ -209,7 +214,11 @@ with col2:
             else:
                 st.session_state.prompt_input = new_stt
             
+            
     prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed", key="prompt_input", on_change=handle_text_submit)
+
+with col_send:
+    st.button("↑", on_click=handle_text_submit, use_container_width=True)
     
 with col3:
     selected_model = st.selectbox(
@@ -240,10 +249,8 @@ if camera_photo is not None:
     if cam_id != st.session_state.last_camera_id:
         is_new_camera = True
 
-is_files_submit = uploaded_files and st.button("Submit Attached Files")
-
-# Execute when there's a prompt OR new camera/files
-if st.session_state.trigger_submit or is_new_camera or is_files_submit:
+# Execute when there's a prompt OR new camera
+if st.session_state.trigger_submit or is_new_camera:
     st.session_state.error_state = None
     if not st.session_state.api_key:
         st.error("Please open the Settings sidebar on the left and enter your API Key first.")
