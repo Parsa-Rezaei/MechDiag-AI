@@ -45,11 +45,6 @@ def set_background(image_file):
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -1;
             pointer-events: none;
-            
-            /* The Ultimate Theme Trick: Exclusion flawlessly adapts to both Light and Dark backgrounds automatically! */
-            filter: brightness(2);
-            mix-blend-mode: exclusion;
-            opacity: 1.0;
         }}
         </style>
         '''
@@ -173,14 +168,7 @@ else:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-if st.session_state.get("error_state"):
-    with st.chat_message("assistant"):
-        st.error(f"Error connecting to AI: {st.session_state.error_state}")
-        if st.button("🔄 Try Again"):
-            st.session_state.error_state = None
-            st.session_state.trigger_submit = True
-            st.session_state.submitted_text = st.session_state.failed_text
-            st.rerun()
+
 
 # --- SIDEBAR FOR API KEY ---
 with st.sidebar:
@@ -323,8 +311,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 st.session_state.pending_camera = None
                 st.session_state.pending_files = None
             except Exception as e:
-                st.session_state.error_state = str(e)
-                st.session_state.failed_text = user_text
-                # Remove the failed message so they can try again
-                st.session_state.messages.pop()
-                st.rerun()
+                error_msg = f"❌ **Google API Connection Failed**\n\nGoogle's servers rejected the request:\n```text\n{str(e)}\n```\n\n*Tip: Switch the model dropdown to **gemini-1.5-flash** to bypass server traffic, or try again in a few seconds.*"
+                message_placeholder.markdown(error_msg)
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                
+                # Clear pending media so it doesn't get stuck
+                st.session_state.pending_camera = None
+                st.session_state.pending_files = None
