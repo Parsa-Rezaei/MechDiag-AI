@@ -29,13 +29,12 @@ def set_background(image_file):
             
         page_bg_img = f'''
         <style>
-        /* Force all Streamlit containers to be transparent so our ::before image is visible! */
-        [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {{
+        /* Force all main Streamlit containers to be transparent so our custom background is visible! */
+        body, .stApp, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {{
             background-color: transparent !important;
         }}
         
-        .stApp::before {{
-            content: "";
+        #custom-bg {{
             background-image: url("data:image/png;base64,{bin_str}");
             background-size: cover;
             background-repeat: no-repeat;
@@ -43,7 +42,7 @@ def set_background(image_file):
             background-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: -1;
+            z-index: -999;
             pointer-events: none;
             
             /* Light mode default: Invert dark image, then darken the lines so they show up strongly */
@@ -51,8 +50,9 @@ def set_background(image_file):
             mix-blend-mode: multiply;
             opacity: 0.7;
         }}
+        
         @media (prefers-color-scheme: dark) {{
-            .stApp::before {{
+            #custom-bg {{
                 /* Dark mode: Boost brightness to make lines glow, keep pure black background */
                 filter: brightness(5);
                 mix-blend-mode: normal;
@@ -60,6 +60,7 @@ def set_background(image_file):
             }}
         }}
         </style>
+        <div id="custom-bg"></div>
         '''
         st.markdown(page_bg_img, unsafe_allow_html=True)
     except Exception as e:
@@ -202,7 +203,7 @@ with st.sidebar:
 attachment_display = st.empty()
 # This invisible anchor lets our CSS target the row directly below it
 st.markdown('<div id="chat-bar-anchor"></div>', unsafe_allow_html=True)
-col1, col2, col_send, col3, col5 = st.columns([1, 7, 1, 3, 1], gap="small")
+col1, col2, col_mic, col_send, col3 = st.columns([1, 6, 1, 1, 3], gap="small")
 
 with col1:
     with st.popover("➕"):
@@ -232,6 +233,9 @@ with col2:
             
     prompt = st.text_input("Ask", placeholder="Ask MechDiag...", label_visibility="collapsed", key="prompt_input", on_change=handle_text_submit)
 
+with col_mic:
+    speech_to_text(start_prompt="🎙️", stop_prompt="🛑", key="mic_stt", language='en', use_container_width=True)
+
 with col_send:
     st.button("↑", on_click=handle_text_submit, use_container_width=True)
     
@@ -242,9 +246,6 @@ with col3:
         index=0,
         label_visibility="collapsed"
     )
-            
-with col5:
-    speech_to_text(start_prompt="🎙️", stop_prompt="🛑", key="mic_stt", language='en', use_container_width=True)
 
 
 # --- RE-INIT AGENT IF SETTINGS CHANGE ---
