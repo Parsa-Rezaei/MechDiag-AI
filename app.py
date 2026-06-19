@@ -39,16 +39,17 @@ def set_background(png_file):
             opacity: 0.4;
             z-index: -1;
             pointer-events: none;
-            /* Light mode: Invert the dark image to make a white bg with black lines */
-            filter: invert(1);
+            /* Light mode: Invert dark image, then darken the lines so they show up strongly */
+            filter: invert(1) brightness(0.3);
             mix-blend-mode: multiply;
+            opacity: 0.7;
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                /* Dark mode: Keep the original dark image */
-                filter: invert(0);
-                mix-blend-mode: lighten; /* Keeps faint lines, ignores pure black background */
-                opacity: 0.8; /* Boost opacity heavily so the lines are completely visible */
+                /* Dark mode: Boost brightness heavily so the faint gray lines glow bright white! */
+                filter: brightness(4);
+                mix-blend-mode: lighten;
+                opacity: 1.0;
             }}
         }}
         </style>
