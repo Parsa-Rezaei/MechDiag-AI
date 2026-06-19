@@ -30,6 +30,7 @@ def set_background(image_file):
         page_bg_img = f'''
         <style>
         [data-testid="stSidebar"] {{
+            background-color: #000000 !important;
             background-image: url("data:image/png;base64,{bin_str}") !important;
             background-size: 100% auto !important;
             background-repeat: no-repeat !important;
