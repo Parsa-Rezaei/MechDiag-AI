@@ -14,33 +14,18 @@ st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centere
 
 # --- BACKGROUND IMAGE WATERMARK ---
 @st.cache_data
-def get_transparent_bg_base64(image_file):
-    from PIL import Image
-    import io
-    import os
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    img_path = os.path.join(base_dir, image_file)
-    
-    img = Image.open(img_path).convert("RGBA")
-    datas = img.getdata()
-    
-    new_data = []
-    for item in datas:
-        # The background is black, so make dark pixels fully transparent
-        if item[0] < 10 and item[1] < 10 and item[2] < 10:
-            new_data.append((0, 0, 0, 0))
-        else:
-            # Make the lines pure white so the CSS mask is fully opaque
-            new_data.append((255, 255, 255, 255))
-            
-    img.putdata(new_data)
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode()
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+import os
 
 def set_background(image_file):
     try:
-        bin_str = get_transparent_bg_base64(image_file)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(base_dir, image_file), "rb") as f:
+            bin_str = base64.b64encode(f.read()).decode()
             
         page_bg_img = f'''
         <style>
@@ -51,21 +36,20 @@ def set_background(image_file):
         
         .stApp::before {{
             content: "";
-            /* Use Streamlit's dynamic text color for the lines! */
-            background-color: var(--text-color);
-            -webkit-mask-image: url("data:image/png;base64,{bin_str}");
-            -webkit-mask-size: cover;
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            mask-image: url("data:image/png;base64,{bin_str}");
-            mask-size: cover;
-            mask-repeat: no-repeat;
-            mask-position: center;
+            background-image: url("data:image/png;base64,{bin_str}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -1;
             pointer-events: none;
-            opacity: 0.15; /* Subtle watermark */
+            
+            /* The Ultimate Theme Trick: Exclusion flawlessly adapts to both Light and Dark backgrounds automatically! */
+            filter: brightness(2);
+            mix-blend-mode: exclusion;
+            opacity: 1.0;
         }}
         </style>
         '''
@@ -249,7 +233,7 @@ with col_send:
 with col3:
     selected_model = st.selectbox(
         "Model",
-        ("gemini-3.5-flash", "gemini-3.1-pro", "gemini-2.5-flash"),
+        ("gemini-1.5-flash", "gemini-3.5-flash", "gemini-3.1-pro", "gemini-2.5-flash"),
         index=0,
         label_visibility="collapsed"
     )
