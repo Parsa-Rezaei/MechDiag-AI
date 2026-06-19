@@ -216,7 +216,7 @@ with col_send:
 with col3:
     selected_model = st.selectbox(
         "Model",
-        ("gemini-3.5-flash", "gemini-3.1-pro"),
+        ("gemini-3.5-flash", "gemini-3.1-pro", "gemini-1.5-flash-8b", "gemini-1.0-pro"),
         index=0,
         label_visibility="collapsed"
     )
@@ -296,8 +296,20 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     gemini_parts.append(gem_file)
                     os.remove(tmp_path)
                 
-                # Send message
-                response = st.session_state.chat_session.send_message(gemini_parts)
+                # Send message with Auto-Retry for 503 Errors
+                import time
+                max_retries = 4
+                response = None
+                for attempt in range(max_retries):
+                    try:
+                        response = st.session_state.chat_session.send_message(gemini_parts)
+                        break
+                    except Exception as e:
+                        if "503" in str(e) and attempt < max_retries - 1:
+                            time.sleep(2.5) # Wait and retry automatically
+                        else:
+                            raise e
+                            
                 final_text = response.text
                 message_placeholder.markdown(final_text)
                 st.session_state.messages.append({"role": "assistant", "content": final_text})
