@@ -47,8 +47,8 @@ def set_background(png_file):
             .stApp::before {{
                 /* Dark mode: Keep the original dark image */
                 filter: invert(0);
-                mix-blend-mode: screen;
-                opacity: 0.6;
+                mix-blend-mode: lighten; /* Keeps faint lines, ignores pure black background */
+                opacity: 0.8; /* Boost opacity heavily so the lines are completely visible */
             }}
         }}
         </style>
