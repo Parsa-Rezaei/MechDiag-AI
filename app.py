@@ -7,7 +7,7 @@ from google.genai import types
 import math
 import json
 import base64
-from streamlit_mic_recorder import mic_recorder
+from streamlit_mic_recorder import speech_to_text
 
 # Set up page config
 st.set_page_config(page_title="MechDiag AI", page_icon="⚙️", layout="centered", initial_sidebar_state="expanded")
@@ -24,31 +24,37 @@ def set_background(png_file):
         bin_str = get_base64_of_bin_file(png_file)
         page_bg_img = f'''
         <style>
-        /* Add the image directly to the app background */
-        .stApp {
+        .stApp {{
             background-color: transparent !important;
-        }
-        /* Make the watermark extremely subtle so it works in both Light and Dark mode */
-        .stApp::before {
+        }}
+        .stApp::before {{
             content: "";
             background-image: url("data:image/png;base64,{bin_str}");
-            background-size: cover;
+            background-size: 60%;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            opacity: 0.08; /* Very subtle watermark */
+            opacity: 0.08;
             z-index: -1;
             pointer-events: none;
-        }
+            mix-blend-mode: multiply; /* Removes white background in light mode */
+        }}
+        @media (prefers-color-scheme: dark) {{
+            .stApp::before {{
+                filter: invert(1); /* Turns black lines white */
+                mix-blend-mode: screen; /* Removes black background in dark mode */
+                opacity: 0.12; /* Slightly brighter for dark mode visibility */
+            }}
+        }}
         </style>
         '''
         st.markdown(page_bg_img, unsafe_allow_html=True)
     except Exception:
         pass
 
-set_background('bg_pattern.png')
+set_background('machine_bg.png')
 
 # Custom CSS to force the exact Gemini Dark Pill design
 st.markdown("""
@@ -124,12 +130,24 @@ if "last_audio_id" not in st.session_state:
     st.session_state.last_audio_id = None
 if "last_camera_id" not in st.session_state:
     st.session_state.last_camera_id = None
+if "error_state" not in st.session_state:
+    st.session_state.error_state = None
+if "failed_text" not in st.session_state:
+    st.session_state.failed_text = ""
 
 def handle_text_submit():
     if st.session_state.get("prompt_input"):
         st.session_state.trigger_submit = True
         st.session_state.submitted_text = st.session_state.prompt_input
         st.session_state.prompt_input = ""
+
+def stt_callback():
+    if st.session_state.get("mic_stt_output"):
+        current = st.session_state.get("prompt_input", "")
+        if current:
+            st.session_state.prompt_input = current + " " + st.session_state.mic_stt_output
+        else:
+            st.session_state.prompt_input = st.session_state.mic_stt_output
 
 def init_agent(api_key, model_name):
     client = genai.Client(api_key=api_key)
@@ -152,6 +170,15 @@ else:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+if st.session_state.get("error_state"):
+    with st.chat_message("assistant"):
+        st.error(f"Error connecting to AI: {st.session_state.error_state}")
+        if st.button("🔄 Try Again"):
+            st.session_state.error_state = None
+            st.session_state.trigger_submit = True
+            st.session_state.submitted_text = st.session_state.failed_text
+            st.rerun()
 
 # --- SIDEBAR FOR API KEY ---
 with st.sidebar:
@@ -179,13 +206,13 @@ with col2:
 with col3:
     selected_model = st.selectbox(
         "Model",
-        ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash", "gemini-1.5-flash-latest"),
-        index=3,
+        ("gemini-3.5-flash", "gemini-3-flash", "gemini-2.5-flash"),
+        index=0,
         label_visibility="collapsed"
     )
             
 with col5:
-    audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key="mic")
+    speech_to_text(start_prompt="🎙️", stop_prompt="🛑", key="mic_stt", callback=stt_callback, language='en', use_container_width=True)
 
 
 # --- RE-INIT AGENT IF SETTINGS CHANGE ---
@@ -199,12 +226,6 @@ if st.session_state.api_key and (st.session_state.chat_session is None or st.ses
         st.error(f"Error initializing agent: {e}")
 
 # Check for new media that hasn't been processed yet
-is_new_audio = False
-if audio is not None:
-    audio_id = audio.get("id")
-    if audio_id != st.session_state.last_audio_id:
-        is_new_audio = True
-
 is_new_camera = False
 if camera_photo is not None:
     cam_id = camera_photo.file_id
@@ -213,8 +234,9 @@ if camera_photo is not None:
 
 is_files_submit = uploaded_files and st.button("Submit Attached Files")
 
-# Execute when there's a prompt OR new audio/camera/files
-if st.session_state.trigger_submit or is_new_audio or is_new_camera or is_files_submit:
+# Execute when there's a prompt OR new camera/files
+if st.session_state.trigger_submit or is_new_camera or is_files_submit:
+    st.session_state.error_state = None
     if not st.session_state.api_key:
         st.error("Please open the Settings sidebar on the left and enter your API Key first.")
         st.session_state.trigger_submit = False
@@ -223,17 +245,13 @@ if st.session_state.trigger_submit or is_new_audio or is_new_camera or is_files_
         user_text = "Please analyze the attached media."
         if st.session_state.trigger_submit:
             user_text = st.session_state.submitted_text
-        elif is_new_audio:
-            user_text = "I recorded an audio message. Please listen to it."
         elif is_new_camera:
             user_text = "I took a photo. Please analyze it."
             
         # Update last known states to prevent infinite loops
-        if is_new_audio: st.session_state.last_audio_id = audio.get("id")
         if is_new_camera: st.session_state.last_camera_id = camera_photo.file_id
             
         # Save the media to session state so it survives the rerun!
-        st.session_state.pending_audio = audio if is_new_audio else None
         st.session_state.pending_camera = camera_photo if is_new_camera else None
         st.session_state.pending_files = uploaded_files if is_files_submit else None
             
@@ -263,17 +281,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                         gemini_parts.append(gem_file)
                         os.remove(tmp_path)
                         
-                # 2. Handle Audio Recording
-                if st.session_state.get('pending_audio'):
-                    audio_data = st.session_state.pending_audio
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                        tmp.write(audio_data['bytes'])
-                        tmp_path = tmp.name
-                    gem_file = st.session_state.genai_client.files.upload(file=tmp_path)
-                    gemini_parts.append(gem_file)
-                    os.remove(tmp_path)
-                    
-                # 3. Handle Camera Photo
+                # 2. Handle Camera Photo
                 if st.session_state.get('pending_camera'):
                     cam_data = st.session_state.pending_camera
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
@@ -283,17 +291,18 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     gemini_parts.append(gem_file)
                     os.remove(tmp_path)
                 
-                # Clear pending media after sending
-                st.session_state.pending_audio = None
-                st.session_state.pending_camera = None
-                st.session_state.pending_files = None
-                
                 # Send message
                 response = st.session_state.chat_session.send_message(gemini_parts)
                 final_text = response.text
                 message_placeholder.markdown(final_text)
                 st.session_state.messages.append({"role": "assistant", "content": final_text})
+                
+                # Clear pending media after successful send
+                st.session_state.pending_camera = None
+                st.session_state.pending_files = None
             except Exception as e:
-                st.error(f"Error connecting to AI: {e}")
+                st.session_state.error_state = str(e)
+                st.session_state.failed_text = user_text
                 # Remove the failed message so they can try again
                 st.session_state.messages.pop()
+                st.rerun()
