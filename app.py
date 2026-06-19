@@ -33,7 +33,6 @@ def set_background(image_file):
             background-image: url("data:image/png;base64,{bin_str}") !important;
             background-size: 100% auto !important;
             background-repeat: no-repeat !important;
-            background-attachment: fixed !important;
             background-position: bottom center !important;
         }}
         </style>
