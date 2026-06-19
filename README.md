@@ -2,6 +2,8 @@
 
 **Kaggle 5-Day AI Agents: Intensive Vibe Coding Course With Google — Capstone Project 2026**
 
+🚀 **Live Interactive Demo:** [Try MechDiag AI on Streamlit Cloud](https://mechdiag-ai-gc4gzdgxqmbszjenykqvre.streamlit.app/#mech-diag-ai)
+
 ---
 
 ## The Problem
