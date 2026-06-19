@@ -44,10 +44,15 @@ def set_background(image_file):
 
 set_background('bg_pattern.png')
 
-# Custom CSS to force the exact Gemini Dark Pill design
+# Custom CSS to force the exact Gemini Dark Pill design and Neon Cyan Diagnostic aesthetic
 st.markdown("""
 <style>
-    /* Make the title centered and large */
+    /* Deep blue-black app background to match the dashboard */
+    .stApp, [data-testid="stAppViewContainer"] {
+        background-color: #03080F !important;
+    }
+
+    /* Glowing Title */
     .gemini-title {
         text-align: center;
         font-size: 2.5rem;
@@ -55,6 +60,38 @@ st.markdown("""
         margin-top: 5vh;
         margin-bottom: 2rem;
         letter-spacing: -0.5px;
+        color: #00E5FF !important;
+        text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        font-family: 'Courier New', Courier, monospace;
+    }
+
+    /* First Page Boxes (Inputs, Chat Input, Selectboxes, Buttons) */
+    div[data-baseweb="input"] > div,
+    div[data-testid="stChatInput"] > div,
+    div[data-baseweb="select"] > div,
+    button[kind="secondary"],
+    button[kind="primary"] {
+        background-color: #0A1929 !important;
+        border: 1px solid #005C7A !important;
+        color: #00E5FF !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease;
+    }
+
+    /* Hover & Focus Glow Effects for the Boxes */
+    div[data-baseweb="input"] > div:focus-within,
+    div[data-testid="stChatInput"] > div:focus-within,
+    div[data-baseweb="select"] > div:focus-within,
+    button[kind="secondary"]:hover,
+    button[kind="primary"]:hover {
+        border-color: #00E5FF !important;
+        box-shadow: 0 0 12px rgba(0, 229, 255, 0.5) !important;
+        color: #FFFFFF !important;
+    }
+    
+    /* Make text inside inputs cyan */
+    input, textarea {
+        color: #00E5FF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -184,7 +221,7 @@ with st.sidebar:
                 pass
                 
     st.markdown("---")
-    st.markdown("*Your key is secure and only used for this session.*")
+    st.markdown("<p style='margin-top: -25px; font-style: italic;'>Your key is secure and only used for this session.</p>", unsafe_allow_html=True)
 
 # --- THE UNIFIED CHAT PILL ---
 attachment_display = st.empty()
