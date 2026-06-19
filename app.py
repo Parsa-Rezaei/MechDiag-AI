@@ -46,10 +46,10 @@ def set_background(png_file):
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                /* Dark mode: The original image without change */
+                /* Dark mode: The exact original image, no transparency, no blending */
                 filter: none;
                 mix-blend-mode: normal;
-                opacity: 0.5;
+                opacity: 1.0;
             }}
         }}
         </style>
