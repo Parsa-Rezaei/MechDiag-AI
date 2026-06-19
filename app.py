@@ -21,34 +21,35 @@ def get_base64_of_bin_file(bin_file):
 
 import os
 
-def set_background_theme(light_file, dark_file):
+def set_background(image_file):
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(base_dir, light_file), "rb") as f:
-            light_str = base64.b64encode(f.read()).decode()
-        with open(os.path.join(base_dir, dark_file), "rb") as f:
-            dark_str = base64.b64encode(f.read()).decode()
+        with open(os.path.join(base_dir, image_file), "rb") as f:
+            bin_str = base64.b64encode(f.read()).decode()
             
         page_bg_img = f'''
         <style>
         .stApp::before {{
             content: "";
-            background-image: url("data:image/png;base64,{light_str}");
+            background-image: url("data:image/png;base64,{bin_str}");
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-position: center;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            opacity: 0.7;
             z-index: -1;
             pointer-events: none;
+            
+            /* Light mode default: Invert dark image, then darken the lines so they show up strongly */
+            filter: invert(1) brightness(0.3);
             mix-blend-mode: multiply;
+            opacity: 0.7;
         }}
         @media (prefers-color-scheme: dark) {{
             .stApp::before {{
-                background-image: url("data:image/png;base64,{dark_str}");
-                filter: none;
+                /* Dark mode: Boost brightness to make lines glow, keep pure black background */
+                filter: brightness(5);
                 mix-blend-mode: normal;
                 opacity: 1.0;
             }}
@@ -57,9 +58,9 @@ def set_background_theme(light_file, dark_file):
         '''
         st.markdown(page_bg_img, unsafe_allow_html=True)
     except Exception as e:
-        st.error(f"Could not load background images: {e}")
+        st.error(f"Could not load background image: {e}")
 
-set_background_theme('bg_pattern_light.png', 'bg_pattern_dark.png')
+set_background('bg_pattern.png')
 
 # Custom CSS to force the exact Gemini Dark Pill design
 st.markdown("""
