@@ -29,6 +29,11 @@ def set_background(image_file):
             
         page_bg_img = f'''
         <style>
+        /* Force all Streamlit containers to be transparent so our ::before image is visible! */
+        [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {
+            background-color: transparent !important;
+        }
+        
         .stApp::before {{
             content: "";
             background-image: url("data:image/png;base64,{bin_str}");
