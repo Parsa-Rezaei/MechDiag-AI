@@ -34,17 +34,12 @@ def set_background(image_file):
             background-color: transparent !important;
         }}
         
-        .stApp::before {{
-            content: "";
-            background-image: url("data:image/png;base64,{bin_str}");
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-position: center;
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: -1;
-            pointer-events: none;
+        .stApp {{
+            background-image: url("data:image/png;base64,{bin_str}") !important;
+            background-size: cover !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
+            background-position: center !important;
         }}
         </style>
         '''
@@ -221,7 +216,7 @@ with col_send:
 with col3:
     selected_model = st.selectbox(
         "Model",
-        ("gemini-1.5-flash", "gemini-3.5-flash", "gemini-3.1-pro", "gemini-2.5-flash"),
+        ("gemini-3.5-flash", "gemini-3.1-pro"),
         index=0,
         label_visibility="collapsed"
     )
