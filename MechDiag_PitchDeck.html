@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MechDiag AI - Pitch Deck</title>
+    <style>
+        @page { size: A4 landscape; margin: 0; }
+        body { 
+            margin: 0; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #03080F; 
+            color: #E0F7FA; 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .slide { 
+            width: 297mm; 
+            height: 209mm; 
+            padding: 30mm 30mm; 
+            box-sizing: border-box; 
+            page-break-after: always; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-start; 
+            position: relative; 
+            overflow: hidden;
+            background-color: #03080F;
+        }
+        
+        /* Decorative Background Elements */
+        .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,229,255,0.15) 0%, rgba(3,8,15,0) 70%);
+            z-index: 0;
+        }
+        .circle-1 { width: 800px; height: 800px; top: -400px; right: -200px; }
+        .circle-2 { width: 600px; height: 600px; bottom: -300px; left: -100px; }
+        
+        .content { z-index: 1; position: relative; }
+        
+        h1 { color: #00E5FF; font-size: 3.5rem; margin-bottom: 0px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 20px rgba(0, 229, 255, 0.4); }
+        h2 { color: #A0D8E0; font-size: 2rem; margin-top: 10px; margin-bottom: 30px; font-weight: 300; }
+        
+        h3 { color: #00E5FF; font-size: 2.5rem; margin-bottom: 25px; border-bottom: 2px solid #005C7A; padding-bottom: 10px; display: inline-block; }
+        
+        p, li { font-size: 1.4rem; line-height: 1.5; margin-bottom: 15px; color: #BEE3E8; }
+        ul { padding-left: 30px; }
+        li::marker { color: #00E5FF; }
+        
+        .accent { color: #00E5FF; font-weight: bold; }
+        .box { background: rgba(10, 25, 41, 0.8); border: 1px solid #005C7A; padding: 25px; border-radius: 12px; box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+        
+        .footer { position: absolute; bottom: 10mm; right: 25mm; font-size: 1rem; color: #005C7A; font-family: monospace; z-index: 1; }
+        .footer-left { position: absolute; bottom: 10mm; left: 25mm; font-size: 1rem; color: #005C7A; font-family: monospace; z-index: 1; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        /* Embedded Image */
+        .bg-blueprint {
+            position: absolute;
+            right: 0px;
+            bottom: -50px;
+            height: 110%;
+            opacity: 0.15;
+            z-index: 0;
+            mix-blend-mode: screen;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1: TITLE -->
+    <div class="slide" style="justify-content: center;">
+        <div class="glow-circle circle-1"></div>
+        <div class="glow-circle circle-2"></div>
+        <img src="bg_pattern.png" class="bg-blueprint" alt="Mechanical Blueprint">
+        <div class="content">
+            <h1>MechDiag AI</h1>
+            <h2>Machinery Condition Monitoring Diagnostic Agent</h2>
+            <div style="margin-top: 50px;">
+                <p style="font-size: 1.8rem; color: #FFFFFF; font-weight: bold; margin-bottom: 5px;">Parsa Rezaei</p>
+                <p style="font-size: 1.3rem; color: #A0D8E0; margin-top: 0;">PhD in Nonlinear Dynamics & Vibration Systems</p>
+                <p style="font-size: 1.3rem; color: #005C7A; margin-top: 20px;">Kaggle 5-Day AI Agents Capstone Project 2026</p>
+            </div>
+        </div>
+        <div class="footer">01</div>
+    </div>
+
+    <!-- SLIDE 2: THE PROBLEM -->
+    <div class="slide">
+        <div class="glow-circle circle-1" style="top: auto; bottom: -400px; right: auto; left: -200px;"></div>
+        <img src="bg_pattern.png" class="bg-blueprint" style="opacity: 0.05; left: 0; right: auto;" alt="Blueprint">
+        <div class="content">
+            <h3>The Problem</h3>
+            <div class="box">
+                <p style="margin-top: 0;">Diagnosing mechanical faults relies on scarce, specialized expertise. The current predictive maintenance paradigm faces critical bottlenecks:</p>
+                <ul>
+                    <li><span class="accent">Interpretation Complexity:</span> Junior technicians struggle to cross-reference FFT spectra, phase readings, and defect frequencies manually.</li>
+                    <li><span class="accent">Data Fragmentation:</span> Engineers must manually correlate sensor data with dense, 500-page PDF service manuals.</li>
+                    <li><span class="accent">Economic Impact:</span> Misdiagnosed faults lead to premature part replacement, unexpected catastrophic failure, and millions in downtime.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-left">MechDiag AI — Capstone Project</div>
+        <div class="footer">02</div>
+    </div>
+
+    <!-- SLIDE 3: THE SOLUTION -->
+    <div class="slide">
+        <div class="glow-circle circle-2" style="top: -200px; left: auto; right: -100px;"></div>
+        <div class="content">
+            <h3>The Solution: MechDiag AI</h3>
+            <p>A virtual Senior Vibration Analyst powered by a Large Language Model agent capable of <span class="accent">strict diagnostic reasoning</span>.</p>
+            <div class="grid-2">
+                <div class="box">
+                    <p style="color: #00E5FF; font-weight: bold; margin-bottom: 10px; font-size: 1.8rem; margin-top: 0;">Multi-Modal Ingestion</p>
+                    <p style="font-size: 1.3rem; margin-bottom: 0;">Instantly parses raw vibration inputs alongside unstructured equipment manuals and thermal data.</p>
+                </div>
+                <div class="box">
+                    <p style="color: #00E5FF; font-weight: bold; margin-bottom: 10px; font-size: 1.8rem; margin-top: 0;">Agentic Reasoning</p>
+                    <p style="font-size: 1.3rem; margin-bottom: 0;">Routes data through logic trees (ISO 13374, ISO 20816) and identifies missing measurements instead of guessing.</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-left">MechDiag AI — Capstone Project</div>
+        <div class="footer">03</div>
+    </div>
+
+    <!-- SLIDE 4: DEPLOYMENT & IMPACT -->
+    <div class="slide">
+        <div class="glow-circle circle-1" style="opacity: 0.5;"></div>
+        <img src="bg_pattern.png" class="bg-blueprint" style="opacity: 0.1;" alt="Blueprint">
+        <div class="content">
+            <h3>Deployment & Validation</h3>
+            <p>Unlike traditional dashboards that passively display data, MechDiag AI actively reasons through the logic tree to prevent operational downtime.</p>
+            
+            <div class="box" style="margin-bottom: 20px; margin-top: 20px;">
+                <p style="margin-bottom: 5px;"><span class="accent">Fully Interactive Web Application</span></p>
+                <p style="margin-bottom: 0; font-family: monospace;">https://mechdiag-ai-gc4gzdgxqmbszjenykqvre.streamlit.app/</p>
+            </div>
+            
+            <p style="font-size: 1.8rem; text-align: center; margin-top: 40px;">
+                "Democratizing expert-level predictive maintenance to save global industries <span class="accent">millions in downtime</span>."
+            </p>
+        </div>
+        <div class="footer-left">MechDiag AI — Capstone Project</div>
+        <div class="footer">04</div>
+    </div>
+
+</body>
+</html>
